@@ -455,7 +455,7 @@ public class StreamDemo {
 
 ## 7.2 Stream流的常见生成方式
 
-![](img\Stream流思想.jpg)
+![](img/Stream流思想.jpg)
 
 生成Stream流的方式
 
