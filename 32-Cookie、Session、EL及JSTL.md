@@ -1,4 +1,4 @@
-32-Cookie、Session、EL及JSTL
+# 32-Cookie、Session、EL及JSTL
 
 # 1.会话技术
 
