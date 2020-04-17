@@ -81,7 +81,9 @@ encoding = GBK
 
 重点的几个步骤：
 
-![](img/tomcat/创建.png)
+![](img\tomcat\创建.png)
+
+
 
 编辑Run配置
 
