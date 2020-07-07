@@ -52,7 +52,7 @@ JDBC 是 Java 访问数据库的标准规范，真正怎么操作数据库还需
 方法说明：
 
 Class.forName(数据库驱动实现类) ：加载和注册数据库驱动，数据库驱动由 mysql 厂商
-"com.mysql.jdbc.Driver"
+`"com.mysql.jdbc.Driver"`
 
 从 JDBC3 开始，目前已经普遍使用的版本。可以不用注册驱动而直接使用。Class.forName
 这句话可以省略
@@ -65,7 +65,7 @@ public class jdbcDemo {
         // mysql 8.0 版本需要将 com.mysql.jdbc.Driver 更换为 com.mysql.cj.jdbc.Driver。
         Class.forName("com.mysql.cj.jdbc.Driver");
         //3. 获取数据库连接对象
-        //mysql 8.0版本 不需要建立 SSL 连接的，需要显式关闭 useSSL=false，最后还需要设置 CST，也就是设置时区 　serverTimezone=UTC
+        //mysql 8.0版本 不需要建立 SSL 连接的，需要显式关闭 useSSL=false，最后还需要设置 CST，也就是设置时区 serverTimezone=UTC
         Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/sys?useSSL=false&serverTimezone=UTC", "root", "password");
         //4.定义sql语句
         String sql = "select * from account";
@@ -138,25 +138,23 @@ Connection 作用：Connection 接口，具体的实现类由数据库的厂商�
 
 执行SQL
 
-1. `boolean execute(String sql)` ：可以执行任意的sql 了解 
-2. `int executeUpdate(String sql) `：执行DML（insert、update、delete）语句、DDL(create，alter、drop)语句
-3. `ResultSet executeQuery(String sql) ` ：执行DQL（select)语句
-4. 返回值：影响的行数，可以通过这个影响的行数判断DML语句是否执行成功 返回值>0的则执行成功，反之，则失败。
+1. `boolean execute(String sql)` ：可以执行任意的sql ，返回布尔值
+3. `ResultSet executeQuery(String sql) ` ：执行DQL，也就是select语句，返回结果集对象
+3. `int executeUpdate(String sql) `：执行DML（insert、update、delete）语句、DDL(create，alter、drop)语句，返回值：影响的行数，可以通过这个影响的行数判断DML语句是否执行成功 返回值>0的则执行成功，反之，则失败。
 
 ```java
+// 注册驱动，可省略，因为DriverManager已实现此功能
 Class.forName("com.mysql.cj.jdbc.Driver");
-//3. 获取数据库连接对象
-//mysql 8.0版本 不需要建立 SSL 连接的，需要显式关闭 useSSL=false，最后还需要设置 CST，也就是设置时区 　serverTimezone=UTC
+// 获取数据库连接对象
 Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/sys?useSSL=false&serverTimezone=UTC", "root", "password");
-//4.定义sql语句
-String sql = "select * from account";
-//5. 获取sql执行对象
+// 定义sql
+String sql = "insert into account values (null,'wangmazi',23.0)";
+// 获取sql执行对象
 Statement statement = con.createStatement();
-//6.执行sql
-boolean execute = statement.execute(sql); //返回受影响的行数
-//处理结果
-System.out.println(execute);
-//7. 释放资源
+// 执行sql
+int i = statement.executeUpdate(sql);
+System.out.println(i);// 1 返回受影响的行数 
+// 释放资源
 statement.close();
 con.close();
 ```
@@ -217,7 +215,7 @@ pre.setString(1,"张三"); // ？的位置编号 从1 开始
 pre.setString(2,"1000");
  //接受返回结果，不需要传递sql语句
  ResultSet resultSet = pre.executeQuery();
-//处理数据
+//处理数据 
 while(resultSet.next()){ //游标向下移动
     //获取数据
     int id = resultSet.getInt(1);
@@ -343,7 +341,7 @@ public class jdbcDemo04 {
                 //1. 创建Properties集合类
               Properties pro = new Properties();
               //2. 加载配置文件
-   			ClassLoader classLoader = JDBCUtils.class.getClassLoader();
+   			ClassLoader classLoader = JDBCUtils.class.getClassLoader();//类加载器
                URL res  = classLoader.getResource("jdbc.properties");
                String path = res.getPath();
                pro.load(new FileReader(path));
@@ -525,7 +523,7 @@ public class jdbcDemo04 {
             Class.forName("com.mysql.cj.jdbc.Driver");
             con= DriverManager.getConnection("jdbc:mysql://localhost:3306/sys?useSSL=false&serverTimezone=UTC", "root", "password");
 
-            // 开启事务
+            // 执行操作之前，开启事务
             con.setAutoCommit(false);
 
             //定义sql
@@ -553,6 +551,7 @@ public class jdbcDemo04 {
             //没有异常则提交事务
             con.commit();
 
+            //需要抓一个大的异常
         }catch (Exception e){
             try{
                 if (con != null){
@@ -608,7 +607,7 @@ public class jdbcDemo04 {
  **方法：**
 
 - 获取连接：getConnection()
--  归还连接：Connection.close()。如果连接对象Connection是从连接池中获取的，那么调用Connection.close()方法，则不会再关闭连接了。而是归还连接
+-  归还连接：Connection.close()。如果连接对象Connection是从连接池中获取的，那么调用Connection.close()方法，则不会再关闭连接了。而是**归还连接**
 
 注意：一般我们不去实现它，有数据库厂商来实现
 
@@ -618,31 +617,40 @@ public class jdbcDemo04 {
 ## 3.1 C3P0 
 
  步骤：
-		1. 导入jar包 (两个)
-	
-	 c3p0-0.9.5.2.jar 
-	
-	mchange-commons-java-0.2.12.jar ，
-	
-		2. 不要忘记导入数据库驱动jar包
 
-     定义配置文件：
+1. 导入jar包 (两个)
 
-     * 名称： c3p0.properties 或者 c3p0-config.xml
+    项目根目录下创建libs目录，将下列jar包导入，并右键项目该目录，选择 add as Library，然后点击OK即可
 
-       ```xml
+    ```
+    c3p0-0.9.5.2.jar 
+    mchange-commons-java-0.2.12.jar
+    
+    # 别忘了SQL的jar包。
+    mysql-connector-java-8.0.12.jar 
+    ```
+
+2. 导入配置文件
+
+    定义配置文件：` c3p0.properties `或者 `c3p0-config.xml`，直接将文件放在src根目录下
+
+    ```xml
        <c3p0-config>
          <!-- 使用默认的配置读取连接池对象 -->
          <default-config>
          	<!--  连接参数 -->
            <property name="driverClass">com.mysql.cj.jdbc.Driver</property>
+           <!--  注意这里的数据库要指定自己的 -->
            <property name="jdbcUrl">jdbc:mysql://localhost:3306/sys?useSSL=false&amp;serverTimezone=Hongkong&amp;characterEncoding=utf-8&amp;autoReconnect=true</property>
-           <property name="user">root</property>
+        <property name="user">root</property>
            <property name="password">password</property>
-           
+     
            <!-- 连接池参数 -->
+           <!-- 初始化申请的连接数量 --> 
            <property name="initialPoolSize">5</property>
+           <!-- 最大连接数量-->
            <property name="maxPoolSize">10</property>
+           <!-- 超时时间 -->
            <property name="checkoutTimeout">3000</property>
          </default-config>
        
@@ -654,35 +662,58 @@ public class jdbcDemo04 {
            <property name="password">password</property>
            
            <!-- 连接池参数 -->
+           <!-- 初始化申请的连接数量 --> 
            <property name="initialPoolSize">5</property>
+           <!-- 最大连接数量-->
            <property name="maxPoolSize">8</property>
+           <!-- 超时时间 -->
            <property name="checkoutTimeout">1000</property>
          </named-config>
        </c3p0-config>
-       ```
-
-     * 路径：直接将文件放在src目录下即可。
+    ```
 
 3. 创建核心对象 数据库连接池对象 ComboPooledDataSource
+
 4. 获取连接： getConnection
+
+基本使用：获取连接对象
+
+```java
+public class test {
+    public static void main(String[] args) throws SQLException {
+        // 1. 创建数据库连接池对象，使用默认配置
+        DataSource ds = new ComboPooledDataSource();
+        // 2. 获取连接对象
+        Connection connection = ds.getConnection();
+        // 3. 打印
+        System.out.println(connection);
+   	// com.mchange.v2.c3p0.impl.NewProxyConnection@17d99928 [wrapping: com.mysql.cj.jdbc.ConnectionImpl@3834d63f]
+   }
+}
+```
+
+案例：
 
 ```java
 public class c3p0Demo01 {
     public static void main(String[] args) throws SQLException {
         // 1. 创建数据库连接池对象，使用默认配置
-        ComboPooledDataSource ds = new ComboPooledDataSource();
+        DataSource ds = new ComboPooledDataSource();
 
         //  使用指定名称配置，一般使用默认配置
 //        ComboPooledDataSource ds = new ComboPooledDataSource("otherc3p0"); //写在配置文件里面的属性值
 
 
         //2. 获取连接对象
-        for (int i = 1; i < 11; i++) {
+        // 注意：最大连接数为配置文件中配置的，如果一次性获取超过该数量的连接，则会在超时时间后报错
+        // 解决方法就是归还连接
+        for (int i = 1; i <= 11; i++) {
             Connection connection = ds.getConnection();
             System.out.println(i +" : " + connection);
 
-            if (i ==5){
-                connection.close();//归还到连接池中
+            if (i == 5){
+                // 测试时可观察打印内容第5条和第6条输出结果的hash值相同
+                connection.close();//归还本次连接到连接池中
             }
 
         }
@@ -695,11 +726,11 @@ public class c3p0Demo01 {
 
 步骤：
 
-1. 导入jar包 druid-1.0.9.jar
+1. 导入jar包 druid-1.0.9.jar，具体方式同c3p0一样
 
 2. 定义配置文件：
 
-   是properties形式的，可以叫任意名称，可以放在任意目录下
+   是properties形式的，可以叫任意名称，可以放在任意目录下，因为需要手动加载该文件
 
    druid.properties
 
@@ -716,31 +747,30 @@ public class c3p0Demo01 {
    maxWait=3000
    ```
 
-3. 加载配置文件。Properties
+3. 加载配置文件 Properties
 
 4. 获取数据库连接池对象：通过工厂来来获取  DruidDataSourceFactory
 
 5. 获取连接：getConnection
 
-   ```java
-   public class druidDemo01 {
-       public static void main(String[] args) throws Exception {
-   
-           //1. 加载配置文件
-           Properties pro = new Properties();
-           InputStream is = druidDemo01.class.getClassLoader().getResourceAsStream("druid.properties");
-           pro.load(is);
-           //2. 获取连接池对象
-           DataSource dataSource = DruidDataSourceFactory.createDataSource(pro);
-           //3.获取连接
-           Connection connection = dataSource.getConnection();
-           System.out.println(connection);
-       }
-   }
-   
-   ```
+基本使用：
 
-   
+```java
+public class druidDemo01 {
+    public static void main(String[] args) throws Exception {
+
+        //1. 加载配置文件
+        Properties pro = new Properties();
+        InputStream is = druidDemo01.class.getClassLoader().getResourceAsStream("druid.properties");
+        pro.load(is);
+        //2. 获取连接池对象
+        DataSource dataSource = DruidDataSourceFactory.createDataSource(pro);
+        //3.获取连接
+        Connection connection = dataSource.getConnection();
+        System.out.println(connection);// com.mysql.cj.jdbc.ConnectionImpl@51565ec2
+    }
+}
+```
 
 定义工具类对象，方便代码不在重复
 
@@ -841,18 +871,30 @@ public class druidDemo02 {
 Spring框架对JDBC的简单封装。提供了一个JDBCTemplate对象简化JDBC的开发
 
 步骤：
-	1. 导入jar包
-	
+
+ 1. 导入jar包，当然还有SQL的jar包，这里不再赘述
+
+    ```
+    commons-logging-1.2.jar
+    spring-beans-5.0.0.RELEASE.jar
+    spring-core-5.0.0.RELEASE.jar
+    spring-jdbc-5.0.0.RELEASE.jar
+    spring-tx-5.0.0.RELEASE.jar
+    ```
+
  2. 创建JdbcTemplate对象。依赖于数据源DataSource
 
     ```java
     public class jdbcTemplateDemo01 {
         public static void main(String[] args) {
             //1. 创建jdbcTemplate
+            // 注：这里的JDBCUtils是我们上面封装的类
             JdbcTemplate jdbcTemplate = new JdbcTemplate(JDBCUtils.getDataSource());
             //3.调用方法
             String sql = "update account set balance = 5000 where id = ?";
-            int update = jdbcTemplate.update(sql, 3);
+            // 参数1：SQL语句 参数2：SQL语句中 ? 对应的值
+            // 第二个参数是一个args，对应每一个 ? 的值，依次写入即可
+            int update = jdbcTemplate.update(sql, 3);// 返回执行状态值，成功1，失败0 
             System.out.println(update);
         }
     }
@@ -860,28 +902,25 @@ Spring框架对JDBC的简单封装。提供了一个JDBCTemplate对象简化JDBC
     ```
 
 3. 调用JdbcTemplate的方法来完成CRUD的操作
-	* update():执行DML语句。增、删、改语句
-	* queryForMap():查询结果将结果集封装为map集合，将列名作为key，将值作为value 将这条记录封装为一个map集合
-		* 注意：这个方法查询的结果集长度只能是1
-	* queryForList():查询结果将结果集封装为list集合
-		* 注意：将每一条记录封装为一个Map集合，再将Map集合装载到List集合中
-	* query():查询结果，将结果封装为JavaBean对象
-		* query的参数：RowMapper
-			* 一般我们使用BeanPropertyRowMapper实现类。可以完成数据到JavaBean的自动封装
-			* new BeanPropertyRowMapper<类型>(类型.class)
-	* queryForObject：查询结果，将结果封装为对象
-		* 一般用于聚合函数的查询
+  * `update()`:执行DML语句。增、删、改语句
+  * `queryForMap()`:查询结果将结果集封装为map集合，将列名作为key，将值作为value 将这条记录封装为一个map集合
+  	* 注意：**这个方法查询的结果集长度只能是1**
+  * `queryForList()`:查询结果将结果集封装为list集合
+  	* 注意：将每一条记录封装为一个Map集合，再将Map集合装载到List集合中
+  * `query()`:查询结果，将结果封装为JavaBean对象
+  	* query的参数：RowMapper
+
+    		一般我们使用BeanPropertyRowMapper实现类。可以完成数据到JavaBean的自动封装
+    		* new BeanPropertyRowMapper<类型>(类型.class)
+  * `queryForObject`：查询结果，将结果封装为对象
+  	* 一般用于聚合函数的查询
 
 练习：
 
 ```java
 public class jdbcTemplateDemo02 {
-    JdbcTemplate jdbcTemplate = null;
-    @Before
-    public void init(){
-        //1. 创建jdbcTemplate
-        jdbcTemplate = new JdbcTemplate(JDBCUtils.getDataSource());
-    }
+     // 创建jdbcTemplate
+    private JdbcTemplate jdbcTemplate =  new JdbcTemplate(JDBCUtils.getDataSource());
 
     // 修改数据
     @Test
@@ -904,6 +943,36 @@ public class jdbcTemplateDemo02 {
         int update = jdbcTemplate.update(sql, 4);
         System.out.println(update);
     }
+    
+    // 查询数据，并将数据封装为Map集合
+    // 问题：如果有两条数据则不能封装为Map集合
+    @Test
+    public void testMap(){
+        String sql = "select * from account where id = ?";
+        Map<String, Object> map = jdbcTemplate.queryForMap(sql, 3);
+        System.out.println(map); // {id=3, NAME=王麻子, balance=5000.0}
+    }
+    
+    // 查询所有记录，将其封装为List
+    @Test
+    public void testList(){
+        String sql = "select * from account";
+        // 将每一条记录封装为一个Map集合，再将多个Map集合装载到List集合中
+        List<Map<String, Object>> list = jdbcTemplate.queryForList(sql);
+
+        for (Map<String, Object> stringObjectMap : list) {
+            System.out.println(stringObjectMap);
+        }
+        /**
+         * {id=1, NAME=张三, balance=1000.0}
+         * {id=2, NAME=李四, balance=1000.0}
+         * {id=3, NAME=王麻子, balance=5000.0}
+         * {id=5, NAME=王麻子, balance=3000.0}
+         * {id=6, NAME=lisi, balance=2000.0}
+         * {id=7, NAME=lisi, balance=2000.0}
+         */
+    }
+    
     // 查询所有数据，并封装为list 自定义封装类
     @Test
     public void test4(){
@@ -912,6 +981,7 @@ public class jdbcTemplateDemo02 {
 
             @Override
             public account mapRow(ResultSet resultSet, int i) throws SQLException {
+                // ResultSet 结果集对象
                 account account = new account();
                 int id = resultSet.getInt("id");
                 String name = resultSet.getString("name");
@@ -926,17 +996,38 @@ public class jdbcTemplateDemo02 {
         });
         for (account account : list) {
             System.out.println(account);
+            
+             /**
+             * account{id=1, name='张三', balance=1000.0}
+             * account{id=2, name='李四', balance=1000.0}
+             * account{id=3, name='王麻子', balance=5000.0}
+             * account{id=5, name='王麻子', balance=3000.0}
+             * account{id=6, name='lisi', balance=2000.0}
+             * account{id=7, name='lisi', balance=2000.0}
+             */
+        
 
         }
     }
 
-    // 查询数据，使用自带的封装
+    // 查询数据，使用自带的封装，可以实现代码简化
+    // 注意：使用BeanPropertyRowMapper时，自定义的成员变量类型必须使用引用类型的封装类，eg：Integer
     @Test
     public void test5(){
         String sql = "select * from account";
+        //注：基本数据类型，不能接收null值，只有引用类型的封装类才可以，所以accout的成员变量类型必须更改为引用类型才可
         List<account> query = jdbcTemplate.query(sql, new BeanPropertyRowMapper<account>(account.class));
         for (account account : query) {
             System.out.println(account);
+            
+            /**
+             * account{id=1, name='张三', balance=1000.0}
+             * account{id=2, name='李四', balance=1000.0}
+             * account{id=3, name='王麻子', balance=5000.0}
+             * account{id=5, name='王麻子', balance=3000.0}
+             * account{id=6, name='lisi', balance=2000.0}
+             * account{id=7, name='lisi', balance=2000.0}
+             */
         }
     }
 
@@ -944,11 +1035,63 @@ public class jdbcTemplateDemo02 {
     @Test
     public void test6(){
         String sql = "select count(id) from account";
+        // queryForObject 一般用来执行聚合函数
         Long aLong = jdbcTemplate.queryForObject(sql, long.class);
-        System.out.println(aLong);
+        System.out.println(aLong);// 6
     }
 
    
+}
+
+```
+
+```java
+public class account {
+    private Integer id;
+    private String name;
+    private Double balance;
+
+    public account() {
+    }
+
+    public account(Integer id, String name, Double balance) {
+        this.id = id;
+        this.name = name;
+        this.balance = balance;
+    }
+
+    @Override
+    public String toString() {
+        return "account{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", balance=" + balance +
+                '}';
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Double getBalance() {
+        return balance;
+    }
+
+    public void setBalance(Double balance) {
+        this.balance = balance;
+    }
 }
 
 ```

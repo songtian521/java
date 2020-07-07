@@ -92,7 +92,7 @@
 
      语法：
 
-     ```
+     ```shell
      etMaxAge(int seconds)
      1. 正数：将Cookie数据写到硬盘的文件中。持久化存储。并指定cookie存活时间，时间到后，cookie文件自动失效
      2. 负数：默认值
@@ -114,87 +114,13 @@
 
    - 在tomcat 8 之前 cookie中不能直接存储中文数据。
 
-     需要将中文数据转码---一般采用URL编码(%E3)
+     需要将中文数据转码，一般采用URL编码(%E3)
 
    - 在tomcat 8 之后，cookie支持中文数据。特殊字符还是不支持，建议使用URL编码存储，URL解码解析
 
-   - 案例：上次访问时间
+   - 具体内容在后面的上次访问时间的案例中有涉及，这里不再赘述
 
-     ```java
-     @WebServlet("/cookieDemo05")
-     public class cookieDemo05 extends HttpServlet {
-         protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-             //设置响应的消息体数据格式及编码
-             response.setContentType("text/html;charset=utf-8");
-             //1. 获取所有cookie
-             Cookie[] cookies = request.getCookies();
-             boolean flag = false;//没有cookie为lastTime
-             //2.遍历cookie
-             if (cookies!=null && cookies.length > 0){
-                 for (Cookie cookie : cookies) {
-                     //3.获取cookie名称
-                     String name = cookie.getName();
-                     //4. 判断名称是不是；lastTime
-                     if("lastTime".equals(name)){
-                         //有cookie，不是第一次访问
-                         flag = true;// 有lastTime的cookie
-     
-                         // 设置cookie的value
-                         // 获取当前时间的字符串，重新设置cookie的值，并重新发送
-                         Date date = new Date();
-                         SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss"); //如果不做处理，这里的空格会报错
-                         String str_date = sdf.format(date);
-                         System.out.println("编码前："+str_date);  // 编码前：2020年04月10日 10:02:14
-                         //URL编码
-                         str_date = URLEncoder.encode(str_date,"utf-8");
-                         System.out.println("编码后："+str_date); // 编码后：2020%E5%B9%B404%E6%9C%8810%E6%97%A5+10%3A02%3A14
-                         cookie.setValue(str_date);
-                         //设置cookie存活时间
-                         cookie.setMaxAge(60*60*24*30);//1个月
-                         response.addCookie(cookie);
-     
-                         //响应数据
-                         //获取cookie的value
-                         String value = cookie.getValue();
-                         System.out.println("解码前："+value); // 解码前：2020%E5%B9%B404%E6%9C%8810%E6%97%A5+10%3A02%3A14
-                         value = URLDecoder.decode(value ,"utf-8");
-                         System.out.println("解码后："+value); // 解码后：2020年04月10日 10:02:14
-                         response.getWriter().write("<h1>欢迎回来，您上次访问时间为："+ value +"</h1>");
-                         break;
-                     }
-                 }
-             }
-     
-             if(cookies == null ||  cookies.length == 0 || flag == false ){
-                 //第一次访问
-                 // 设置cookie的value
-                 // 获取当前时间的字符串，重新设置cookie的值，并重新发送
-                 Date date = new Date();
-                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss");
-                 String str_date = sdf.format(date);
-                 System.out.println("编码前："+str_date);// 编码前：2020年04月10日 10:01:47
-                 //URL编码
-                 str_date = URLEncoder.encode(str_date,"utf-8");
-                 System.out.println("编码后："+str_date);// 编码后：2020%E5%B9%B404%E6%9C%8810%E6%97%A5+10%3A01%3A47
-                 Cookie cookie = new Cookie("lastTime", str_date);
-                 cookie.setValue(str_date);
-                 //设置cookie存活时间
-                 cookie.setMaxAge(60*60*24*30);//1个月
-                 response.addCookie(cookie);
-     
-                 response.getWriter().write("<h1>欢迎您首次访问</h1>");
-             }
-     
-         }
-     
-         protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-             this.doPost(request, response);
-         }
-     }
-     
-     ```
-
-5. cookie共享问题？
+5. cookie共享问题？（cookie的获取范围有多大？）
 
    - 假设在一个tomcat服务器中，部署了多个web项目，那么在这些web项目中cookie能不能共享？
 
@@ -202,8 +128,12 @@
      - `setPath(String path) `：设置cookie的获取范围。默认情况下，设置当前的虚拟目录
 
      ```java
+     // 创建cookie对象
+     Cookie c = new Cookie("msg","hello world");
      // 设置cookie共享
-     c.setPath("/"); // /代表当前项目根路径
+     c.setPath("/"); // /代表当前项目根路径，注意：是同一个服务器下多个web项目可以被共享
+     // 发送cookie
+     response.adddCookie(c)
      ```
 
    - 不同的tomcat服务器间cookie共享问题？
@@ -222,6 +152,85 @@
    - 作用：
      -  cookie一般用于存出少量的不太敏感的数据
      - 在不登录的情况下，完成服务器对客户端的身份识别
+
+## 2.3 案例：上次访问时间
+
+```java
+@WebServlet("/cookieDemo05")
+public class cookieDemo05 extends HttpServlet {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        //设置响应的消息体数据格式及编码
+        response.setContentType("text/html;charset=utf-8");
+        //1. 获取所有cookie
+        Cookie[] cookies = request.getCookies();
+        boolean flag = false;//没有cookie为lastTime
+        //2.遍历cookie
+        if (cookies!=null && cookies.length > 0){
+            for (Cookie cookie : cookies) {
+                //3.获取cookie名称
+                String name = cookie.getName();
+                //4. 判断名称是不是；lastTime
+                if("lastTime".equals(name)){
+                    //有cookie，不是第一次访问
+                    flag = true;// 有lastTime的cookie
+
+                    // 设置cookie的value
+                    // 获取当前时间的字符串，重新设置cookie的值，并重新发送
+                    Date date = new Date();
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss"); //如果不做处理，这里的空格会报错
+                    String str_date = sdf.format(date);
+                    System.out.println("编码前："+str_date);  // 编码前：2020年04月10日 10:02:14
+                    //URL编码
+                    str_date = URLEncoder.encode(str_date,"utf-8");
+                    System.out.println("编码后："+str_date); // 编码后：2020%E5%B9%B404%E6%9C%8810%E6%97%A5+10%3A02%3A14
+                    cookie.setValue(str_date);
+                    //设置cookie存活时间
+                    cookie.setMaxAge(60*60*24*30);//1个月
+                    // 发送cookie
+                    response.addCookie(cookie);
+
+                    //响应数据
+                    //获取cookie的value
+                    String value = cookie.getValue();
+                    System.out.println("解码前："+value); // 解码前：2020%E5%B9%B404%E6%9C%8810%E6%97%A5+10%3A02%3A14
+                    value = URLDecoder.decode(value ,"utf-8");
+                    System.out.println("解码后："+value); // 解码后：2020年04月10日 10:02:14
+                    response.getWriter().write("<h1>欢迎回来，您上次访问时间为："+ value +"</h1>");
+                    break;
+                }
+            }
+        }
+
+        if(cookies == null ||  cookies.length == 0 || flag == false ){
+            //第一次访问
+            // 设置cookie的value
+            // 获取当前时间的字符串，重新设置cookie的值，并重新发送
+            Date date = new Date();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss");
+            String str_date = sdf.format(date);
+            System.out.println("编码前："+str_date);// 编码前：2020年04月10日 10:01:47
+            //URL编码
+            str_date = URLEncoder.encode(str_date,"utf-8");
+            System.out.println("编码后："+str_date);// 编码后：2020%E5%B9%B404%E6%9C%8810%E6%97%A5+10%3A01%3A47
+            Cookie cookie = new Cookie("lastTime", str_date);
+            cookie.setValue(str_date);
+            //设置cookie存活时间
+            cookie.setMaxAge(60*60*24*30);//1个月
+            response.addCookie(cookie);
+
+            response.getWriter().write("<h1>欢迎您首次访问</h1>");
+        }
+
+    }
+
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        this.doPost(request, response);
+    }
+}
+
+```
+
+
 
 # 3. JSP入门学习
 
@@ -244,17 +253,31 @@ JSP定义Java代码的方式
 
    ```jsp
    <%
-          System.out.println("hello jsp");
+      System.out.println("hello jsp");
    %>
    ```
 
-2.  <%! 代码 %>
+2. <%! 代码 %>
 
    定义的java代码，在jsp转换后的java类的成员位置。
+
+   ```jsp
+   <%!
+      int i = 3;
+   %>
+   ```
 
 3. <%= 代码 %>
 
    定义的java代码，会输出到页面上。输出语句中可以定义什么，该脚本中就可以定义什么。
+   
+   ```jsp
+   <%= 
+   	i  <%-- 会将i的值输出到页面上（这是注释） --%> 
+   %>
+   ```
+   
+   
 
 ## 3.2 JSP内置对象
 
@@ -273,14 +296,108 @@ jsp一共有9个内置对象
 | config      | ServletConfig       | Servlet的配置对象                            |
 | exception   | Throwable           | 异常对象                                     |
 
-**关于：out**
-
-字符输出流对象。可以将数据输出到页面上。和response.getWriter()类似
+**关于：out**：字符输出流对象。可以将数据输出到页面上。和`response.getWriter()`类似
 
 `response.getWriter()`和`out.write()`的区别：
 
 - 在tomcat服务器真正给客户端做出响应之前，会先找response缓冲区数据，再找out缓冲区数据。
-- response.getWriter()数据输出永远在out.write()之前
+- `response.getWriter()`数据输出永远在`out.write()`之前，为避免使用`response.getWriter()`打乱布局，所以，尽量使用`out.write()`
+
+**内置对象练习：更改上次访问时间案例为jsp**
+
+```jsp
+<%@ page import="java.util.Date" %>
+<%@ page import="java.text.SimpleDateFormat" %>
+<%@ page import="java.net.URLEncoder" %>
+<%@ page import="java.net.URLDecoder" %><%--
+  Created by IntelliJ IDEA.
+  User: song
+  Date: 2020/5/30
+  Time: 17:21
+  To change this template use File | Settings | File Templates.
+--%>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<html>
+<head>
+    <title>Title</title>
+</head>
+<body>
+<%
+    //设置响应的消息体数据格式及编码
+    response.setContentType("text/html;charset=utf-8");
+    //1. 获取所有cookie
+    Cookie[] cookies = request.getCookies();
+    boolean flag = false;//没有cookie为lastTime
+    //2.遍历cookie
+    if (cookies!=null && cookies.length > 0){
+        for (Cookie cookie : cookies) {
+            //3.获取cookie名称
+            String name = cookie.getName();
+            //4. 判断名称是不是；lastTime
+            if("lastTime".equals(name)){
+                //有cookie，不是第一次访问
+                flag = true;// 有lastTime的cookie
+
+                // 设置cookie的value
+                // 获取当前时间的字符串，重新设置cookie的值，并重新发送
+                Date date = new Date();
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss"); //如果不做处理，这里的空格会报错
+                String str_date = sdf.format(date);
+                System.out.println("编码前："+str_date);  // 编码前：2020年04月10日 10:02:14
+                //URL编码
+                str_date = URLEncoder.encode(str_date,"utf-8");
+                System.out.println("编码后："+str_date); // 编码后：2020%E5%B9%B404%E6%9C%8810%E6%97%A5+10%3A02%3A14
+                cookie.setValue(str_date);
+                //设置cookie存活时间
+                cookie.setMaxAge(60*60*24*30);//1个月
+                // 发送cookie
+                response.addCookie(cookie);
+
+                //响应数据
+                //获取cookie的value
+                String value = cookie.getValue();
+                System.out.println("解码前："+value); // 解码前：2020%E5%B9%B404%E6%9C%8810%E6%97%A5+10%3A02%3A14
+                value = URLDecoder.decode(value ,"utf-8");
+                System.out.println("解码后："+value); // 解码后：2020年04月10日 10:02:14
+
+                %>
+
+    <h1>欢迎回来，您上次访问时间为:<%= value %></h1>
+<%
+                break;
+            }
+        }
+    }
+
+    if(cookies == null ||  cookies.length == 0 || flag == false ){
+        //第一次访问
+        // 设置cookie的value
+        // 获取当前时间的字符串，重新设置cookie的值，并重新发送
+        Date date = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss");
+        String str_date = sdf.format(date);
+        System.out.println("编码前："+str_date);// 编码前：2020年04月10日 10:01:47
+        //URL编码
+        str_date = URLEncoder.encode(str_date,"utf-8");
+        System.out.println("编码后："+str_date);// 编码后：2020%E5%B9%B404%E6%9C%8810%E6%97%A5+10%3A01%3A47
+        Cookie cookie = new Cookie("lastTime", str_date);
+        cookie.setValue(str_date);
+        //设置cookie存活时间
+        cookie.setMaxAge(60*60*24*30);//1个月
+        response.addCookie(cookie);
+
+%>
+    "<h1>欢迎您首次访问</h1>
+<%
+
+    }
+%>
+</body>
+</html>
+
+```
+
+
 
 ## 3.3 指令
 
@@ -296,14 +413,20 @@ jsp一共有9个内置对象
    <%@ 指令名称 属性名1=属性值1 属性名2=属性值2 ... %>
    ```
 
-   -  contentType：等同于response.setContentType()
-     - 设置响应体的mime类型以及字符集
+   -  contentType：等同于`response.setContentType()`
+     - 设置响应体的MIME类型以及字符集
      - 设置当前jsp页面的编码（只能是高级的IDE才能生效，如果使用低级工具，则需要设置pageEncoding属性设置当前页面的字符集）
+   -  buffer：缓冲区大小，默认8kb
    - import：导包
    - errorPage：当前页面发生异常后，会自动跳转到指定的错误页面
    - isErrorPage：标识当前也是是否是错误页面。
      - true：是，可以使用内置对象exception
      -  false：否。默认值。不可以使用内置对象exception
+
+   ```jsp
+   <%@ page contentType="text/html;charset=UTF-8" errorPage="showTime.jsp" pageEncoding="GBK" language="java" buffer="16kb" %>
+   <%@ page import="java.util.Date" %>
+   ```
 
 2. include：页面包含的。导入页面的资源文件
 
@@ -313,9 +436,26 @@ jsp一共有9个内置对象
 
 3.  taglib：导入资源
 
+   示例：导入标签库
+   
+   WEB-INF下创建lib目录，将如下两个jar包导入，并将lib目录标记为jar包资源目录
+   
+   - javax.servlet.jsp.jstl.jar
+   - jstl-impl.jar
+   
+   使用方法：
+   
    ```jsp
     <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
    ```
+   
+   - prefix：前缀，自定义的（一般都是使用默认的c）
+   
+     ```
+     <c:if test=""></c:if>
+     ```
+   
+     
 
 ## 3.4 注释
 
@@ -326,7 +466,7 @@ jsp一共有9个内置对象
 
 # 4.Session
 
-概念：服务器端会话技术，在一次会话的多次请求间共享数据，将数据保存在服务器端的对象中。HttpSession
+概念：服务器端会话技术，在**一次会话的多次请求间**共享数据，将数据保存在服务器端的对象中。HttpSession
 
 ![](img/tomcat/Session原理.bmp)
 
@@ -388,11 +528,17 @@ jsp一共有9个内置对象
    }
    ```
 
+使用步骤：
+
+1. 先访问：sessionDemo01
+2. 在访问：sessionDemo02，此时输出内容
+3. 关闭浏览器后，重新打开再访问sessionDemo02，输出null，可以证明，是一次会话内多次请求间共享数据
+
 ## 4.2 session 细节
 
 1. 原理
 
-   Session的实现是依赖于Cookie的。
+   **Session的实现是依赖于Cookie的。**
 
 2. 当客户端关闭后，服务器不关闭，两次获取session是否为同一个？
 
@@ -433,6 +579,8 @@ jsp一共有9个内置对象
    - session的活化：
 
      在服务器启动后，将session文件转化为内存中的session对象即可。
+
+   **注意：**如果是在idea中启动，则只会钝化而不会活化，因为idea启动项目的时候会把原来的work工作目录删除重新部署，并重新创建work工作目录，那么钝化后的位于work目录下的，存储着session数据的`SESSIONS.ser`临时文件也随着旧work目录的删除而删除，从而导致无法读取。当然了，以后部署项目也不会再idea本地部署，所以不用担心以后会遇到类似问题。直接在tomcat中运行是不会存在相关问题的
 
 4. session什么时候被销毁？
 
@@ -863,7 +1011,7 @@ jsp一共有9个内置对象
 
 jsp默认支持el表达式的。如果要忽略el表达式
 1. 设置jsp中page指令中：`isELIgnored="true" `忽略当前jsp页面中所有的el表达式
-2. `${表达式} `：忽略当前这个el表达式
+2. `\${表达式} `：忽略当前这个el表达式
 
 ## 7.1 使用
 
@@ -875,29 +1023,67 @@ jsp默认支持el表达式的。如果要忽略el表达式
    - 比较运算符： > < >= <= == !=
    - 逻辑运算符： &&(and) ||(or) !(not)
    - 空运算符： empty
-     - 功能：用于判断字符串、集合、数组对象是否为null或者长度是否为0
+     
+     功能：用于判断字符串、集合、数组对象是否为null或者长度是否为0
+     
      -  ${empty list}:判断字符串、集合、数组对象是否为null或者长度为0
      - ${not empty str}:表示判断字符串、集合、数组对象是否不为null 并且 长度>0
 
+   ```jsp
+     <h3>算数运算符</h3>
+     ${3 + 4} <br>
+     ${3 / 4} <br>
+     ${3 % 4} <br>
+     ${3 div 4} <br>
+     ${3 mod 4} <br>
+   
+     <h3>比较运算符</h3>
+     ${3 == 4} <br>  <%-- false --%>
+     
+     <h3>逻辑运算符</h3>
+     ${3 > 4 && 3 < 4} <br>  <%-- false --%>
+     ${3 > 4 and 3 < 4} <br>  <%-- false --%>
+   
+   
+     <%
+       String str = "";
+       String str1 = "abc";
+   
+       request.setAttribute("str",str);
+       request.setAttribute("str1",str1);
+   
+       List list = new ArrayList<>();
+       request.setAttribute("list",list);
+     %>
+     ${empty str} <%-- true --%>
+     ${empty str1} <%-- false --%>
+     ${not empty str} <%-- false --%>
+     ${not empty str1} <%-- true --%>
+   
+     ${not empty list} <%-- false --%>
+   ```
+
 2. 获取值
 
-   -  el表达式只能从域对象中获取值
+   -  **el表达式只能从域对象中获取值**
 
    - 语法：
 
      ```
      ${域名称.键名}  从指定域中获取指定键的值
+     ${键名} 依次从最小的域中查找是否有该键对应的值，直到找到为止
      ```
-
-     域名称
-
+   ```
+     
+   域名称
+     
      1. pageScope		--> pageContext
      2. requestScope 	--> request
      3. sessionScope 	--> session
-     4. applicationScope --> application（ServletContext）
-
-     示例：
-
+   4. applicationScope --> application（ServletContext）
+     
+   示例：
+     
      ```jsp
      <%
      // 在域中存储数据
@@ -907,27 +1093,42 @@ jsp默认支持el表达式的。如果要忽略el表达式
      
      ${requestScope.name}
      ${sessionScope.age}
-     ${requestScope.sex}  <%-- 不输出任何东西，不会报错 -- %>
-     ```
+     ${requestScope.sex}  <%-- 当对象不存在时，不输出任何东西，不会报错，更不会输出null -- %>
+   ```
 
-3. 获取对象：List集合、Map集合的值
+     
 
-   -  对象：${域名称.键名.属性名}
+3. 获取对象、List集合、Map集合的值
+
+   - 对象：${域名称.键名.属性名}
 
      ```jsp
        <%
               User user = new User();
               user.setUsername("张三");
               user.setPassword("123");
+              user.setBirthday2(new Date());
      
               request.setAttribute("u",user);
       %>
      ${requestScope.u.username}
+     <%-- 
+         通过对象的属性来获取
+         setter或getter方法，去掉set或get，在将剩余部分首字母变为小写，得到的就是属性
+         示例：setName -> Name -> name
+         --%>
+     
+     ${u.username} <%-- 如果保证u是唯一的话，是可以这么写的 --%>
+     
+     ${u.birthday} <%-- 如果不存在会报错: 类型[Dao.User]上找不到属性[birthday]--%>
+     
+     ${u.birthday2}  <%-- 当有对应的get和set方法之后就不会报错 --%>
+     ${u.birthday2.month}  <%-- 正确输出值，因为birthday是Date类型的，而Date下有一个get方法叫做getMonth  --%>
      ```
 
      
 
-   -  List集合：${域名称.键名[索引]}
+   - List集合：${域名称.键名[索引]}
 
      示例：
 
@@ -937,14 +1138,16 @@ jsp默认支持el表达式的。如果要忽略el表达式
               list.add(1);
               list.add(2);
               list.add(3);
-              list.add(user);
+              list.add(user); <%-- 上面定义的user对象 --%>
               request.setAttribute("list",list);
      
           %>
      
      ${list}
      ${list[0]}
-     ${list[10]} <!--越界不报错-->
+     ${list[10]} <%-- 越界不报错，只显示一个空字符串而已 --%>
+     
+     ${list[3].username} <%-- 获取user对象的值 --%>
      ```
 
    - Map集合：
@@ -1057,6 +1260,10 @@ jsp默认支持el表达式的。如果要忽略el表达式
    <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
    <%--
    完成数字编号对应的星期几案例
+       1. 域中存储一个数字
+       2. 使用choose标签取出数字
+       3. 使用when标签做数字判断
+       4. otherwise标签做其他情况声明
    --%>
    <%
        request.setAttribute("number",3);
@@ -1213,6 +1420,8 @@ jsp默认支持el表达式的。如果要忽略el表达式
 
 作用：一般用于完成通用的操作。如：登录验证、统一编码处理、敏感字符过滤...
 
+![](img/tomcat/1.Filter过滤器.bmp)
+
 ## 10.1 Filter使用
 
 步骤：
@@ -1239,7 +1448,7 @@ public class FilterDemo03 implements Filter {
         System.out.println("doFilter....");
 
         //放行
-        chain.doFilter(req, resp);
+        filterChain.doFilter(req, resp);
 
     }
 
@@ -1356,7 +1565,7 @@ public class FilterDemo03 implements Filter {
 2. 如果登录了，则直接放行。
 3. 如果没有登录，则跳转到登录页面，提示"您尚未登录，请先登录"。
 
-直接在case模块下添加如下类即可
+![](img/tomcat/2.案例1_登录验证.bmp)
 
 ```java
 @WebFilter("/*")
@@ -1365,7 +1574,7 @@ public class loginFilter implements Filter {
     }
 
     public void doFilter(ServletRequest req, ServletResponse resp, FilterChain chain) throws ServletException, IOException {
-        //强制转换
+        //强制转换，只有HttpServletRequest才有getRequestURI
         HttpServletRequest request = (HttpServletRequest) req;
         // 1. 获取资源请求路径
         String uri = request.getRequestURI();
@@ -1409,15 +1618,17 @@ public class loginFilter implements Filter {
 - 代理对象：
 - 代理模式：代理对象代理真实对象，达到增强真实对象功能的目的
 
+![](img/tomcat/4.代理.bmp)
+
 **实现方式：**
 
-- 静态代理：有一个类文件描述代理模
+- 静态代理：有一个类文件描述代理模式
 - 动态代理：在内存中形成代理类
 
 **实现步骤：**
 
 - 代理对象和真实对象实现相同的接口
-- 代理对象 = Proxy.newProxyInstance();
+- 代理对象 = `Proxy.newProxyInstance();`
 - 使用代理对象调用方法。
 - 增强方法
 
@@ -1478,9 +1689,9 @@ public class loginFilter implements Filter {
            //动态代理增强Lenovo对象
            /**
             * 参数：
-            * 1. 类加载器   真实对象.getClass().getClassLoader()
-            * 2. 接口数组    真实对象.getClass().getInterfaces()
-            * 3. 处理器       new InvocationHandler() 需要实现一个方法
+            * 1. 类加载器   真实对象.getClass().getClassLoader()  类加载器
+            * 2. 接口数组   真实对象.getClass().getInterfaces()  保证相同接口实现
+            * 3. 处理器     new InvocationHandler() 需要实现的一个方法，核心业务逻辑
             */
            saleComputer proxyInstance = (saleComputer)Proxy.newProxyInstance(lenovo.getClass().getClassLoader(), lenovo.getClass().getInterfaces(), new InvocationHandler() {
                //代理逻辑编写的方法，代理对象调用的所有方法都会触发该方法执行
@@ -1489,7 +1700,7 @@ public class loginFilter implements Filter {
                 *
                 * @param proxy 代理对象
                 * @param method 代理对象调用的方法，被封装的对象
-                * @param args  代理对象调用的方法时，传递的实际参数
+                * @param args  代理对象调用方法时，传递的实际参数
                 * @return
                 * @throws Throwable
                 */
@@ -1544,6 +1755,8 @@ public class loginFilter implements Filter {
 
 ## 10.5 案例：敏感词过滤
 
+![](img/tomcat/3.过滤敏感词汇.bmp)
+
 1. 过滤器类
 
    ```java
@@ -1576,6 +1789,8 @@ public class loginFilter implements Filter {
                        //判断方法名是否是 getParameterValue
                        // 。。。。
                    }
+                   // 如果不是getParameter方法则原样执行
+                   // 传递真实对象，传递参数数组
                    return method.invoke(req,args);
                }
            });
@@ -1682,6 +1897,8 @@ public class loginFilter implements Filter {
     </listener>
     ```
 
+    指定初始化参数`<context-param>`
+
   - 注解：
 
     ```
@@ -1710,7 +1927,7 @@ web.xml中配置如下
 ```
 
 ```java
-@WebListener
+@WebListener 
 public class listenerDemo01 implements ServletContextListener {
     /**
      * 监听ServletContext对象创建的。  ServletContext对象服务器启动后自动创建
@@ -1752,4 +1969,7 @@ public class listenerDemo01 implements ServletContextListener {
 
 # 12.综合练习
 
+![](img/tomcat/列表查询分析.png)
+
 具体代码查看tomcat下case模块
+

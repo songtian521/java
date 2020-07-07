@@ -4,7 +4,7 @@
 
 ## 1.1 web相关概念
 
-1. 软件架构
+1. 软件架构	
 
    - C/S：客户端/服务器端
    -  B/S：浏览器/服务器端
@@ -77,6 +77,92 @@ encoding = GBK
 
 原来的应该是utf-8，将此文件内全部的这个属性换为GBK即可
 
+- 启动
+
+  - bin/startup.bat ,双击运行该文件即可
+
+  -  访问
+
+    ```
+    浏览器输入：http://localhost:8080 回车访问自己
+    http://别人的ip:8080 访问别人
+    ```
+
+  - 可能存在的问题：
+
+    - 黑窗口一闪而过
+
+      原因：没有正确配置JAVA_HOME环境变量
+
+    - 启动报错：
+
+      - 解决方式1：找到占用端口号，找到对应的进程并杀死
+
+      - 解决方式2：修改自身端口号，修改配置文件conf/server.xml
+
+        ```xml
+        <Connector port="8888" protocol="HTTP/1.1"
+        		               connectionTimeout="20000"
+        		               redirectPort="8445" />
+        ```
+
+- 关闭：
+
+  - 正常关闭：
+
+    - bin/shutdown.bat
+    - ctrl+c
+
+  - 强制关闭：
+
+    直接关闭启动的黑窗口即可
+
+- 部署项目：
+
+  - 方式1：直接将项目放在webapps目录下即可
+
+    - /hello：项目的访问路径--->虚拟目录
+
+    - 简化部署：将项目打成一个war包，再将war包放在webapps目录下即可
+
+      说明：war会自动进行解压缩
+
+  - 方式2：配置conf/server.xml文件
+
+    在`<Host>`标签体中配置
+
+    ```xml
+    <Context docBase="D:\hello" path="/hehe" />
+    ```
+
+    - docBase:项目存放的路径
+    - path：虚拟目录
+
+  - 方式3：在`conf\Catalina\localhost`创建任意名称的xml文件。在文件中编写
+
+    ```xml
+    <Context docBase="D:\hello" />
+    ```
+
+    虚拟目录：xml文件的名称。
+
+    注：不用跟xml的后缀名，只需要名字即可
+
+- 静态项目和动态项目
+
+  目录结构
+
+  ```
+  java动态项目的目录结构：
+      -- 项目的根目录
+          -- WEB-INF目录：
+              -- web.xml：web项目的核心配置文件
+              -- classes目录：放置字节码文件的目录
+              -- lib目录：放置依赖的jar包
+  ```
+
+  
+
 ## 1.4 IDEA创建项目
 
 重点的几个步骤：
@@ -87,6 +173,8 @@ encoding = GBK
 
 编辑Run配置
 
+![](img/tomcat/创建1.png)
+
 ![](img/tomcat/创建2.png)
 
 ![](img/tomcat/创建3.png)
@@ -94,7 +182,7 @@ encoding = GBK
 # 2.Server applet 初解
 
 概念：运行在服务器端的小程序
-* Servlet就是一个接口，定义了Java类被浏览器访问到(tomcat识别)的规则。
+* Servlet就是一个接口，**定义了Java类被浏览器访问到(tomcat识别)的规则**。
 * 将来我们自定义一个类，实现Servlet接口，复写方法。
 
 ## 2.1 快速入门
@@ -180,6 +268,12 @@ encoding = GBK
    <servlet>
        <servlet-name>demo1</servlet-name>
        <servlet-class>servlet.ServletDemo01</servlet-class>
+       
+       <!-- 指定servlet的创建时机
+   		1. 在第一次被访问时创建  该标签值为负数的时候
+   		2. 在服务器启动的时候创建 该标签值为0或正整数
+   	-->
+       <load-on-startup>5</load-on-startup>
    </servlet>
    
    <servlet-mapping>
@@ -188,7 +282,9 @@ encoding = GBK
    </servlet-mapping>
    ```
 
-5. 浏览器地址访问
+5. 启动IDEA的Tomcat
+
+6. 浏览器地址访问
 
    ```shell
    http://localhost:8080/request/demo1
@@ -202,6 +298,8 @@ encoding = GBK
    ```
 
 ## 2.2 servlet执行原理
+
+![](img/tomcat/Servlet执行原理.bmp)
 
 1. 当服务器接受到客户端浏览器的请求后，会解析请求URL路径，获取访问的Servlet的资源路径
 2. 查找web.xml文件，是否有对应的`<url-pattern>`标签体内容。
@@ -246,7 +344,7 @@ encoding = GBK
 
 ## 2.4 servlet 3.0 
 
-好处：支持竹节配置，可以不需要在web.xml文件中进行配置了。
+好处：支持注解配置，可以不需要在web.xml文件中进行配置了。
 
 步骤：
 
@@ -260,7 +358,7 @@ encoding = GBK
 
 3. 实现抽象方法
 
-4. 再类上使用用@WebServlet注解，进行配置
+4. 再类上使用@WebServlet注解，进行配置
 
    ```
    @WebServlet("资源路径")
@@ -392,9 +490,10 @@ Servlet的体系结构：
 
 - Servlet -- 接口
 
-- GenericServlet -- 抽象类
 
-- HttpServlet -- 抽象类
+-  GenericServlet -- 抽象类--> 实现了接口Servlet
+
+- HttpServlet -- 抽象类-->继承了GenericServlet 
 
 ## 3.1 GenericServlet
 
@@ -427,8 +526,68 @@ demo02
 
 ## 3.2 HttpServlet 
 
-HttpServlet：对http协议的一种封装，简化操作
-1. 定义类继承HttpServlet
+HttpServlet：对http协议的一种封装，简化操作。
+
+获取并判断是get方式请求还是post方式请求数据是非常麻烦的，而sun公司则帮我们进行了一系列的封装
+
+![](img/tomcat/HttpServlet.bmp)
+
+HttpServlet抽象类，继承了GenericServlet抽象类，而GenericServlet抽象类又实现了接口Servlet，在HttpServlet抽象类中重写了service方法，并对相关请求进行了一系列处理
+
+部分源码：
+
+```java
+    protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String method = req.getMethod();
+        long lastModified;
+        if (method.equals("GET")) {
+            lastModified = this.getLastModified(req);
+            if (lastModified == -1L) {
+                this.doGet(req, resp);
+            } else {
+                long ifModifiedSince;
+                try {
+                    ifModifiedSince = req.getDateHeader("If-Modified-Since");
+                } catch (IllegalArgumentException var9) {
+                    ifModifiedSince = -1L;
+                }
+
+                if (ifModifiedSince < lastModified / 1000L * 1000L) {
+                    this.maybeSetLastModified(resp, lastModified);
+                    this.doGet(req, resp);
+                } else {
+                    resp.setStatus(304);
+                }
+            }
+        } else if (method.equals("HEAD")) {
+            lastModified = this.getLastModified(req);
+            this.maybeSetLastModified(resp, lastModified);
+            this.doHead(req, resp);
+        } else if (method.equals("POST")) {
+            this.doPost(req, resp);
+        } else if (method.equals("PUT")) {
+            this.doPut(req, resp);
+        } else if (method.equals("DELETE")) {
+            this.doDelete(req, resp);
+        } else if (method.equals("OPTIONS")) {
+            this.doOptions(req, resp);
+        } else if (method.equals("TRACE")) {
+            this.doTrace(req, resp);
+        } else {
+            String errMsg = lStrings.getString("http.method_not_implemented");
+            Object[] errArgs = new Object[]{method};
+            errMsg = MessageFormat.format(errMsg, errArgs);
+            resp.sendError(501, errMsg);
+        }
+
+    }
+```
+
+
+
+测试步骤：
+
+1. 定义类ServletDemo03并继承HttpServlet
 2. 复写doGet/doPost方法
 
 ```java
@@ -443,6 +602,8 @@ public class ServletDemo03 extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         System.out.println("doPost....");
+        // 简化，可以省略很多代码
+        this.doGet(req,resp);
     }
 }
 ```
@@ -503,7 +664,7 @@ doGet....
 
 urlpartten：Servlet访问路径
 
-- 一个Servlet可以定义多个访问路径 ： @WebServlet({"/d4","/dd4","/ddd4"})
+- 一个Servlet可以定义多个访问路径 ：` @WebServlet({"/d4","/dd4","/ddd4"})`
 - 路径定义规则：
   1. /xxx：路径匹配
   2. /xxx/xxx:多层路径，目录结构
@@ -535,7 +696,9 @@ public class ServletDemo04 extends HttpServlet {
 
 概念：Hyper Text Transfer Protocol 超文本传输协议
 
-传输协议：定义了，客户端和服务器端通信时，发送数据的格式
+传输协议：定义了客户端和服务器端通信时，发送数据的格式
+
+![](img/tomcat/HTTP协议.bmp)
 
 特点：
 
@@ -586,7 +749,7 @@ public class ServletDemo04 extends HttpServlet {
 
    - Referer：http://localhost:8080/request/login2.html
 
-     告诉服务器，我（当前请求）从哪里来？
+     **告诉服务器，我（当前请求）从哪里来？**
 
      Referer：此路径是当前所在网址。
 
@@ -618,9 +781,17 @@ public class ServletDemo04 extends HttpServlet {
    username=zhangsan
    ```
 
-# 5.Request
+# 5.Request 请求消息
 
-说明：Request是Servlet继承HttpServlet抽象类后，需要实现的两个方法之一
+**Servlet整体流程：**
+
+1. tomcat服务器会根据请求url中的资源路径，创建对应的ServlertDemo的对象
+2. tomcat服务器，会创建request和response对象，request对象中封装请求消息数据，response对象封装响应消息数据
+3. tomcat将request和response两个对象传递给service方法，并且调用service方法
+4. 程序员**可以通过request对象获取请求消息数据，通过response对象设置响应消息数据**
+5. 服务器在给浏览器作出响应之前，会从response对象中拿出设置的响应消息数据，放在数据体里面并返回
+
+
 
 request对象和response对象的原理
 1. request和response对象是由服务器创建的。我们来使用它们
@@ -630,10 +801,10 @@ request对象和response对象的原理
 
 ```
 ServletRequest -- 接口
-	 继承
+	 |继承
 HttpServletRequest -- 接口
-	实现
-org.apache.catalina.connector.RequestFacade 类(tomcat)
+	 |实现
+org.apache.catalina.connector.RequestFacade 类(由tomcat实现的)
 ```
 
 ## 5.1 request功能
@@ -642,7 +813,9 @@ org.apache.catalina.connector.RequestFacade 类(tomcat)
 
 1. 获取请求行数据
 
+   ```
    GET /day14/demo1?name=zhangsan HTTP/1.1
+   ```
 
    方法：
 
@@ -710,6 +883,9 @@ org.apache.catalina.connector.RequestFacade 类(tomcat)
 
 2. 获取请求头数据
 
+   - `String getHeader(String name)`：通过请求头的名称获取请求头的值
+   - `Enumeration<String> getHeaderNames()`：获取所有的请求头名称
+
    ```java
     // 获取所有请求头名称
    Enumeration<String> headerNames = request.getHeaderNames();
@@ -739,7 +915,7 @@ org.apache.catalina.connector.RequestFacade 类(tomcat)
    ```
 
    ```java
-     /**
+   /**
      获取请求头数据 referer
      请求来源
      */
@@ -771,8 +947,8 @@ org.apache.catalina.connector.RequestFacade 类(tomcat)
    1. 获取流对象
 
       ```java
-      BufferedReader getReader()：获取字符输入流，只能操作字符数据
-      ServletInputStream getInputStream()：获取字节输入流，可以操作所有类型数据---》此方法暂不演示，之后的文件下载案例在做示范
+      BufferedReader getReader()//获取字符输入流，只能操作字符数据
+      ServletInputStream getInputStream()//获取字节输入流，可以操作所有类型数据---》此方法暂不演示，之后的文件下载案例在做示范
       ```
 
       ```java
@@ -790,30 +966,44 @@ org.apache.catalina.connector.RequestFacade 类(tomcat)
 
 ## 5.2 其他功能
 
-1. 获取请求参数通用方式：
+### 5.2.1 获取请求参数通用方式：
 
-   不论get还是post请求方式都可以使用下列方法来获取请求参数
+```java
+String getParameter(String name):根据参数名称获取参数值 username=zs&password=123
+    
+String[] getParameterValues(String name):根据参数名称获取参数值的数组hobby=xx&hobby=game
+    
+Enumeration<String> getParameterNames():获取所有请求的参数名称
+    
+Map<String,String[]> getParameterMap():获取所有参数的map集合
+ 
+request.setCharacterEncoding("utf-8"); 设置流的字符集，不设置的话get方式下中文会乱码
+```
 
-   ```java
+不论get还是post请求方式都可以使用下列方法来获取请求参数
+
+**示例：**
+
+```java
    // 设置流的字符集，不设置的话get方式下中文会乱码
    request.setCharacterEncoding("utf-8");
    // 根据参数名称获取参数值
    String username = request.getParameter("username"); //无论post，还是get都可以通用的
    System.out.println("post");
-System.out.println(username);
-   ```
-   
+   System.out.println(username);
+```
+
    ```java
    // 根据参数名称获取参数值的数组
    String[] hobbies = request.getParameterValues("hobby");
    for (String hobby : hobbies) {
        System.out.println(hobby);
-}
+   }
    ```
-   
+
    ```java
     //获取所有请求的参数名称
-   Enumeration<String> parameterNames = request.getParameterNames();
+Enumeration<String> parameterNames = request.getParameterNames();
    while (parameterNames.hasMoreElements()){
        String name = parameterNames.nextElement();
        System.out.println(name);
@@ -827,12 +1017,12 @@ System.out.println(username);
         * hobby
         * game
         */
-}
+   }
    ```
-   
-   ```java
+
+```java
    //获取所有参数的map集合
-   Map<String, String[]> parameterMap = request.getParameterMap();
+Map<String, String[]> parameterMap = request.getParameterMap();
    //遍历
    Set<String> keyset = parameterMap.keySet();
    for (String name : keyset) {
@@ -844,11 +1034,11 @@ System.out.println(username);
        }
        System.out.println("==========");
    }
-}
-   ```
+   }
+```
 
    此时可以发现，既然通用，那么就可以这样使用
-   
+
    ```java
    package servlet.request;
    
@@ -883,7 +1073,7 @@ System.out.println(username);
                    System.out.println(value);
                }
                System.out.println("==========");
-           }
+        }
        }
    
        protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -897,47 +1087,49 @@ System.out.println(username);
            this.doPost(request,response);
        }
    }
-
-   ```
    
-2. 请求转发
-
-   一种在服务器内部的资源跳转方式
-
-   步骤：
-
-   1. 通过request对象获取请求转发器对象：`RequestDispatcher getRequestDispatcher(String path)`
-   2. 使用RequestDispatcher对象来进行转发：`forward(ServletRequest request,ServletResponse response)`
-
-   ```java
-   @WebServlet("/RequestDemo08")
-   public class RequestDemo08 extends HttpServlet {
-       protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-           System.out.println("RequestDemo08被访问了。。。。");
-           //转发到demo07资源
-           //获取请求转发对象
-          RequestDispatcher requestDispatcher = request.getRequestDispatcher("/RequestDemo07");
-           // 进行转发操作
-          requestDispatcher.forward(request,response);
-   
-       }
-   
-       protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-           this.doPost(request,response);
-   
-       }
-   }
    ```
 
-   特点：
+### 5.2.2 请求转发
 
-   - 浏览器地址栏路径不发生变化
-   - 只能转发到当前服务器内部资源中。
-   - 转发是一次请求
+一种在服务器内部的资源跳转方式
+
+步骤：
+
+1. 通过request对象获取请求转发器对象：`RequestDispatcher getRequestDispatcher(String path)`
+2. 使用RequestDispatcher对象来进行转发：`forward(ServletRequest request,ServletResponse response)`
+
+示例：
+
+```java
+@WebServlet("/RequestDemo08")
+public class RequestDemo08 extends HttpServlet {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        System.out.println("RequestDemo08被访问了。。。。");
+        //转发到demo07资源
+        //获取请求转发对象
+       RequestDispatcher requestDispatcher = request.getRequestDispatcher("/RequestDemo07");
+        // 进行转发操作
+       requestDispatcher.forward(request,response);
+
+    }
+
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        this.doPost(request,response);
+
+    }
+}
+```
+
+特点：
+
+- 浏览器地址栏路径不发生变化
+- 只能转发到当前服务器内部资源中。
+- 转发是一次请求，说明多个资源使用同一个请求
 
 3. 共享数据：
 
-   - 域对象：一个有作用范围的对象，可以在范围内共享
+   - 域对象：一个有作用范围的对象，可以在范围内共享数据
 
    - request域：代表一次请求的范围，一般用于请求转发的多个资源中共享数据
 
@@ -1034,6 +1226,8 @@ System.out.println(username);
 4. 登录成功跳转到SuccessServlet展示：登录成功！用户名,欢迎您
 
 5. 登录失败跳转到FailServlet展示：登录失败，用户名或密码错误
+
+![](img/tomcat/登录案例.bmp)
 
 步骤
 
@@ -1194,6 +1388,7 @@ System.out.println(username);
                //使用ClassLoader加载配置文件，获取字节输入流
                InputStream is =
                        JDBCUtils.class.getClassLoader().getResourceAsStream("druid.properties");
+               // load方法 传入字节输入流
                pro.load(is);
            //2.初始化连接池对象
                ds = DruidDataSourceFactory.createDataSource(pro);
@@ -1338,6 +1533,7 @@ System.out.println(username);
            //3. 创建user对象
            User loginUser = new User();
            //使用BeanUtils封装
+           // 注意使用BeanUtils进行封装的时候必须导入commons-beanutils-1.8.0.jar包
            try {
                BeanUtils.populate(loginUser,Map);
            } catch (IllegalAccessException e) {
@@ -1415,29 +1611,180 @@ System.out.println(username);
     }
     
     ```
+    
+
+## 5.4 BeanUtils工具类
+
+作用：简化数据封装， 用于封装JavaBean的
+
+JavaBean：标准的Java类
+
+1. 要求：
+				1. 类必须被public修饰
+	2. 必须提供空参的构造器
+	3. 成员变量必须使用private修饰
+	4. 提供公共setter和getter方法
+	
+2. 功能：封装数据
+
+3. 概念：
+
+      ```
+      成员变量：
+      属性：setter和getter方法截取后的产物
+      例如：getUsername() --> Username--> username
+      ```
+
+4. 方法：
+
+      ```
+      1. setProperty() // 设置值
+      2. getProperty()
+      3. populate(Object obj , Map map):将map集合的键值对信息，封装到对应的JavaBean对象中
+      ```
+
+示例：
+
+```java
+package Util;
+
+import Dao.User;
+import Dao.User1;
+import org.apache.commons.beanutils.BeanUtils;
+import org.junit.Test;
+
+import java.lang.reflect.InvocationTargetException;
+
+/**
+ * @Class:ServletLogin.Util.BeanUtilsTest
+ * @Descript:
+ * @Author:宋天
+ * @Date:2020/5/27
+ */
+public class BeanUtilsTest {
+    @Test
+    public void test1(){
+        User user = new User();
+        User1 user1 = new User1();
+
+        try {
+            BeanUtils.setProperty(user1,"hehe","zhangsan");
+
+            /**
+             * 当参数2为gender的时候，输出如下内容：
+             * User1{username='null', password='null', gender='null'}
+             *
+             * 当参数2为hehe的时候，输出如下内容
+             * User1{username='null', password='null', gender='zhangsan'}
+             *
+             * 由此可见，setProperty方法操作的不是成员变量，
+             * 设置的JavaBean对象是通过get/set方法名称截取后的产物 eg：getUsername() --> Username--> username
+             *
+             * 注意：我们主要了解一下实际操作的不是成员变量即可，一般情况下get/set方法和成员变量名对应的
+             */
+
+            String hehe = BeanUtils.getProperty(user1, "hehe");
+            System.out.println(hehe); // zhangsan
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println(user1);
+        // User1{username='null', password='null', gender='zhangsan'}
+    }
+}
+
+```
+
+```java
+package Dao;
+
+/**
+ * @Class:ServletLogin.Dao.User
+ * @Descript:
+ * @Author:宋天
+ * @Date:2020/5/27
+ */
+public class User1 {
+    private String username;
+    private String password;
+
+    private String gender;
+
+    // 注意：这里我们更改了get和set方法的名称
+    public String gethehe() {
+        return gender;
+    }
+
+    public void sethehe(String gender) {
+        this.gender = gender;
+    }
+
+    @Override
+    public String toString() {
+        return "User1{" +
+                "username='" + username + '\'' +
+                ", password='" + password + '\'' +
+                ", gender='" + gender + '\'' +
+                '}';
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+
+}
+
+```
+
+
 
 # 6.HTTP协议响应消息数据
 
-上面已经说过了请求消息：客户端发送给服务器端的数据
+**请求消息：**客户端发送给服务器端的数据
 
-**数据格式：**
+数据格式：
 
 1. 请求行
 2. 请求头
 3. 请求空行
 4. 请求体
 
-接下来就是响应消息：服务器端发送给客户端的数据
+
+
+**响应消息：**服务器端发送给客户端的数据
 
 数据格式：
 
 1. 响应行
 
    - 组成：协议/版本 响应状态码 状态码描述
+
+     ```
+     HTTP/1.1 200 OK
+     ```
+
    - 响应状态码：服务器告诉客户端浏览器本次请求和响应的一个状态。
      1.  状态码都是3位数字
      2. 分类
-        - 1xx：服务器就收客户端消息，但没有接受完成，等待一段时间后，发送1xx多状态码
+        - 1xx：服务器接收客户端消息，但没有接收完成，等待一段时间后，发送1xx多状态码
         - 2xx：成功。代表：200
         - 3xx：重定向。代表：302(重定向)，304(访问缓存)
         - 4xx：客户端错误。
@@ -1452,17 +1799,20 @@ System.out.println(username);
    - 常见的响应头
 
      - Content-Type：服务器告诉客户端本次响应体数据格式以及编码格式
+     
      - Content-disposition：服务器告诉客户端以什么格式打开响应体数据
-     - 值：
 
-     ```
-     in-line:默认值,在当前页面内打开
-     attachment;filename=xxx：以附件形式打开响应体。文件下载
-     ```
+       ```
+       in-line:默认值,在当前页面内打开
+       attachment;filename=xxx：以附件形式打开响应体。文件下载
+       ```
+     
+       
+     
 
 3. 响应空行
 
-4. 响应体：传输的数据
+4. 响应体：就是传输的数据
 
 **响应字符串格式：**
 
@@ -1472,6 +1822,7 @@ Content-Type: text/html;charset=UTF-8
 Content-Length: 101
 Response对象
 Date: Wed, 06 Jun 2018 07:08:42 GMT
+
 <html>
 <head>
 <title>$Title$</title>
@@ -1482,9 +1833,9 @@ hello , response
 </html>
 ```
 
-# 7.Response对象
+# 7.Response 响应消息
 
-功能：设置响应消息
+## 7.1 设置响应消息概述
 
 1. 设置响应行
    - 格式：HTTP/1.1 200 ok
@@ -1552,9 +1903,11 @@ hello , response
 
      
 
-## 7.1 重定向
+## 7.2 重定向
 
 重定向：资源跳转的方式
+
+![](img/tomcat/重定向.bmp)
 
 ```java
 @WebServlet( "/responseDemo01")
@@ -1593,7 +1946,7 @@ public class responseDemo02 extends HttpServlet {
         System.out.println("responseDemo02.....");
 
         Object msg = request.getAttribute("msg");
-        System.out.println(msg);//null，无法共享数据
+        System.out.println(msg);//null，无法共享数据，说明request域无法在重定向中共享数据
     }
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -1618,7 +1971,7 @@ public class responseDemo02 extends HttpServlet {
 
 **以上两点也算是面试题，一般这样问：forward 和 redirect 区别**
 
-## 7.2 路径写法
+## 7.3 路径写法
 
 路径分类
 
@@ -1626,7 +1979,7 @@ public class responseDemo02 extends HttpServlet {
 
   - 如：`./index.html`
 
-  - 不以`/`开头，以`.`开头路径
+  - 以`.`开头路径
 
   - 规则：找到当前资源和目标资源之间的相对位置关系
 
@@ -1645,7 +1998,7 @@ public class responseDemo02 extends HttpServlet {
     /request/responseDemo02
     ```
 
-  - 以/开头的路径为绝对路径
+  - 以`/`开头的路径为绝对路径
 
   - 规则：判断定义的路径是给谁用的？判断请求将来从哪儿发出
 
@@ -1656,21 +2009,21 @@ public class responseDemo02 extends HttpServlet {
 
     - 给服务器使用：不需要加虚拟目录
 
-      转发路径
+      注：重定向需要加虚拟目录
 
-## 7.3 服务器输出字符数据到浏览器
+## 7.4 服务器输出字符数据到浏览器
 
-步骤：
-1. 获取字符输出流
-2. 输出数据
+存在问题：服务器输出字符数据到浏览器，如果输出汉字会存在乱码问题
 
-存在问题：乱码
+原因：编解码使用的字符集不一样，浏览器默认使用的是gb2312（GBK）解码，tomcat默认使用的编码是ISO-8859-1
 
-解决方法：
+解决方法：获取流对象之前，设置流的默认编码
 
-1. PrintWriter pw = response.getWriter();获取的流的默认编码是ISO-8859-1
-2. 设置该流的默认编码
-3. 告诉浏览器响应体使用的编码
+使用步骤：
+
+1. 设置流的默认编码
+2. 获取字符输出流
+3. 输出数据
 
 ```java
 @WebServlet( "/responseDemo04")
@@ -1697,7 +2050,20 @@ public class responseDemo04 extends HttpServlet {
 }
 ```
 
-## 7.4 验证码
+## 7.5 服务器输出字符数据到浏览器
+
+同样存在乱码问题，原因同上。解决方法同上
+
+```java
+// 设置编码
+response.setContentType("text/html;charset=utf-8");
+// 获取字节输出流
+ServletOutputStream sos = response.getOutputStream();
+// 输出数据
+sos.write("hello".getBytes()); 
+```
+
+## 7.6 验证码
 
 1. 本质：图片
 
@@ -1805,158 +2171,204 @@ public class responseDemo06 extends HttpServlet {
 
 # 8.ServletContext对象
 
-概念：代表整个web应用，可以和程序的容器(服务器)来通信
+概念：
 
-1.  获取：
-   1. 通过request对象获取
+ServletContext官方叫servlet上下文。服务器会为每一个工程创建一个对象，这个对象就是ServletContext对象。这个对象全局唯一，而且工程内部的所有servlet都共享这个对象。所以叫全局应用程序共享对象。
 
-      ```
-      request.getServletContext();
-      ```
+作用：
 
-   2. 通过HttpServlet获取
+1. 是一个域对象 
 
-      ```
-      this.getServletContext();
-      ```
+   域对象是服务器在内存上创建的存储空间，**全局共享**，用于在不同动态资源（servlet）之间传递与共享数据。
 
-   示例：
+   | 域对象方法                | 说明                                                         |
+   | ------------------------- | :----------------------------------------------------------- |
+   | setAttribute(name,value); | name是String类型，value是Object类型；往域对象里面添加数据，添加时以key-value形式添加 |
+   | getAttribute(name);       | 根据指定的key读取域对象里面的数据                            |
+   | removeAttribute(name);    | 根据指定的key从域对象里面删除数据                            |
+
+2. 可以读取全局配置参数
+
+   | 读取全局配置参数方法                         | 说明                       |
+   | -------------------------------------------- | -------------------------- |
+   | getServletContext().getInitParameter(name);  | 根据指定的参数名获取参数值 |
+   | getServletContext().getInitParameterNames(); | 获取所有参数名称列表       |
+
+3. 可以搜索当前工程目录下面的资源文件
+
+   | 核心方法                                      | 说明                                     |
+   | --------------------------------------------- | ---------------------------------------- |
+   | getServletContext().getRealPath(path)         | 根据相对路径获取服务器上资源的绝对路径   |
+   | getServletContext().getResourceAsStream(path) | 根据相对路径获取服务器上资源的输入字节流 |
+
+4. 可以获取当前工程名字（了解）
+
+   | 方法                                   | 说明             |
+   | -------------------------------------- | ---------------- |
+   | getServletContext().getContextPath()； | 获取当前工程名字 |
 
    ```java
-   @WebServlet("/servletContextDemo01")
-   public class ServletContextDemo01 extends HttpServlet {
+   publicvoid doGet(HttpServletRequest request, HttpServletResponse response)
+       throws ServletException, IOException {
+       
+       //获取工程名字 
+       response.getOutputStream().write(("工程名字："+getServletContext().getContextPath()).getBytes());
+   }
+   ```
+
+   
+
+**获取：**
+
+1. 通过request对象获取
+
+   ```
+   request.getServletContext();
+   ```
+
+2. 通过HttpServlet获取
+
+   ```
+   this.getServletContext();
+   ```
+
+示例：
+
+```java
+@WebServlet("/servletContextDemo01")
+public class ServletContextDemo01 extends HttpServlet {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+        //1.通过request对象获取
+        ServletContext context1 = request.getServletContext();
+        //2.通过HttpServlet对象获取
+        ServletContext context2 = this.getServletContext();
+
+        System.out.println(context1 == context2 );// true
+        System.out.println(context1);// org.apache.catalina.core.ApplicationContextFacade@89c2702
+        System.out.println(context2);// org.apache.catalina.core.ApplicationContextFacade@89c2702
+    }
+
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        this.doPost(request,response);
+    }
+}
+
+```
+
+**功能：**
+
+1. 获取MIME类型
+
+   MIME类型：在互联网通信过程中定义的一种文件数据类型
+
+   格式： 大类型/小类型 text/html image/jpeg
+
+   获取示例 ：`String getMimeType(String file)`
+
+   ```java
+   @WebServlet("/servletContextDemo02")
+   public class ServletContextDemo02 extends HttpServlet {
        protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-   
-           //1.通过request对象获取
-           ServletContext context1 = request.getServletContext();
            //2.通过HttpServlet对象获取
-           ServletContext context2 = this.getServletContext();
-   
-           System.out.println(context1 == context2 );// true
-           System.out.println(context1);// org.apache.catalina.core.ApplicationContextFacade@89c2702
-           System.out.println(context2);// org.apache.catalina.core.ApplicationContextFacade@89c2702
+           ServletContext context = this.getServletContext();
+           //3. 定义文件名称
+           String fileName = "a.jpg";
+           //4. 获取MIME类型
+           String mimeType = context.getMimeType(fileName);
+           System.out.println(mimeType);// image/jpeg，原因jpg对应的就是jpeg
        }
    
        protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
            this.doPost(request,response);
        }
    }
-   
    ```
 
-2. 功能：
+2. 域对象：共享数据
 
-   1. 获取MIME类型
+   ```java
+   setAttribute(String name,Object value)
+   getAttribute(String name)
+   removeAttribute(String name)
+       
+   ServletContext对象范围：所有用户所有请求的数据
+   ```
 
-      MIME类型:在互联网通信过程中定义的一种文件数据类型
+   示例：
 
-      格式： 大类型/小类型 text/html image/jpeg
+   ```java
+   @WebServlet("/servletContextDemo03")
+   public class ServletContextDemo03 extends HttpServlet {
+       protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+           //2.通过HttpServlet对象获取
+           ServletContext context = this.getServletContext();
+           //设置数据
+           context.setAttribute("name","zhangsan");
+           
+           // 注意：这里通过request设置数据
+           // 记忆：request的setAttribute和context的setAttribute是不一样的（get方法同理）。相当于同名不同类
+           request.setAttribute("age","20");
+       }
+   
+       protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+           this.doPost(request,response);
+       }
+   }
+   ```
 
-      获取示例 ：`String getMimeType(String file)`
+   ```java
+   @WebServlet("/servletContextDemo04")
+   public class ServletContextDemo04 extends HttpServlet {
+       protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+           //2.通过HttpServlet对象获取
+           ServletContext context = this.getServletContext();
+           //获取数据，通过context设置的数据，服务器都可以获取
+           String name = (String)context.getAttribute("name");
+           System.out.println(name);// zhangsan
+           
+           // request设置的数据，通过context对象无法获取
+           String age = (String)context.getAttribute("age");
+           System.out.println(age);// null 
+       }
+   
+       protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+           this.doPost(request,response);
+       }
+   }
+   ```
 
-      ```java
-      @WebServlet("/servletContextDemo02")
-      public class ServletContextDemo02 extends HttpServlet {
-          protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-              //2.通过HttpServlet对象获取
-              ServletContext context2 = this.getServletContext();
-              //3. 定义文件名称
-              String fileName = "a.jpg";
-              //4. 获取MIME类型
-              String mimeType = context2.getMimeType(fileName);
-              System.out.println(mimeType);// image/jpeg
-          }
-      
-          protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-              this.doPost(request,response);
-          }
-      }
-      ```
+3. 获取文件的真实(服务器)路径
 
-   2. 域对象：共享数据
+   ```java
+   String getRealPath(String path)
+   String b = context.getRealPath("/b.txt");//web目录下资源访问
+   System.out.println(b);
+   String c = context.getRealPath("/WEB-INF/c.txt");//WEB-INF目录下的资源访问
+   System.out.println(c);
+   String a = context.getRealPath("/WEB-INF/classes/a.txt");//src目录下的资源访问
+   System.out.println(a);
+   ```
 
-      ```java
-      setAttribute(String name,Object value)
-      getAttribute(String name)
-      removeAttribute(String name)
-          
-      ServletContext对象范围：所有用户所有请求的数据
-      ```
+   示例：
 
-      示例：
-
-      ```java
-      @WebServlet("/servletContextDemo03")
-      public class ServletContextDemo03 extends HttpServlet {
-          protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-              //2.通过HttpServlet对象获取
-              ServletContext context2 = this.getServletContext();
-              //设置数据
-              context2.setAttribute("msg","hahahaha");
-          }
-      
-          protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-              this.doPost(request,response);
-          }
-      }
-      ```
-
-      ```java
-      @WebServlet("/servletContextDemo04")
-      public class ServletContextDemo04 extends HttpServlet {
-          protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-              //2.通过HttpServlet对象获取
-              ServletContext context2 = this.getServletContext();
-              //获取数据
-              Object msg = context2.getAttribute("msg");
-              System.out.println(msg);// 成功获取数据  hahahaha
-          }
-      
-          protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-              this.doPost(request,response);
-          }
-      }
-      ```
-
-   3. 获取文件的真实(服务器)路径
-
-      ```java
-      String getRealPath(String path)
-      String b = context.getRealPath("/b.txt");//web目录下资源访问
-      System.out.println(b);
-      String c = context.getRealPath("/WEB-INF/c.txt");//WEB-INF目录下的资源访问
-      System.out.println(c);
-      String a = context.getRealPath("/WEB-INF/classes/a.txt");//src目录下的资源访问
-      System.out.println(a);
-      ```
-
-      示例：
-
-      ```java
-      @WebServlet("/servletContextDemo05")
-      public class ServletContextDemo05 extends HttpServlet {
-          protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-              //2.通过HttpServlet对象获取
-              ServletContext context2 = this.getServletContext();
-              //获取文件的服务器路径
-              String realPath = context2.getRealPath("a.txt");// web目录下资源访问
-              System.out.println(realPath);// F:\学习\tomcat\out\artifacts\tomcat_war_exploded\a.txt
-      
-              String realPath1 = context2.getRealPath("/WEB-INF/file/b.txt");// WEB-INF目录下资源访问
-              System.out.println(realPath1);// F:\学习\tomcat\out\artifacts\tomcat_war_exploded\WEB-INF\file\b.txt
-      
-              String realPath2 = context2.getRealPath("/WEB-INF/classes/c.txt");// src目录下资源访问
-              System.out.println(realPath2);// F:\学习\tomcat\out\artifacts\tomcat_war_exploded\WEB-INF\classes\c.txt
-      
-              File file = new File(realPath);
-          }
-      
-          protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-              this.doPost(request,response);
-          }
-      }
-      
-      ```
+   ```java
+   // 通过HttpServlet对象获取
+   ServletContext context = this.getServletContext();
+   
+   String realPath = context.getRealPath("/a.txt");// web目录下资源访问
+   System.out.println(realPath);// F:\学习\ServletLogin\out\artifacts\ServletLogin_war_exploded\a.txt
+   
+   String realPath1 = context.getRealPath("/WEB-INF/b.txt");// WEB-INF目录下的资源访问
+   System.out.println(realPath1);// F:\学习\ServletLogin\out\artifacts\ServletLogin_war_exploded\WEB-INF\b.txt
+   
+   String realPath2 = context.getRealPath("/WEB-INF/classes/c.txt");// src目录下的资源访问
+   System.out.println(realPath2); // F:\学习\ServletLogin\out\artifacts\ServletLogin_war_exploded\WEB-INF\classes\c.txt
+   
+   /**
+    * 获取src目录还有一个方法是ClassLoader，但是ClassLoader只能获取src目录下的资源，而不能获取web目录下的资源，局限性比较大
+    */
+   ```
 
 # 9. 案例：文件下载
 
@@ -1964,6 +2376,18 @@ public class responseDemo06 extends HttpServlet {
 1. 页面显示超链接
 2. 点击超链接后弹出下载提示框
 3. 完成图片文件下载
+
+分析：
+
+ 1. 超链接指向的资源如果能够被浏览器解析，则在浏览器中展示，如果不能解析，则弹出下载提示框。但是这个条件不满足需求，我们需要任何资源都必须弹出下载提示框
+
+ 2. 使用响应头设置资源的打开方式：
+
+    ```
+    content-disposition:attachment;filename=xxx
+    ```
+
+    
 
 步骤：
 
@@ -2007,12 +2431,14 @@ public class responseDemo06 extends HttpServlet {
            //设置响应头类型content-type
            String mimeType = con.getMimeType(filename);//获取文件的mime类型
            response.setHeader("content-type",mimeType);
-           //设置响应头打开方式 content-disposition
+           
            // 解决中文文件名问题
            //1.使用user-agent请求头
            String agent = request.getHeader("user-agent");
            //2.使用工具类方法编码文件名即可
            filename = DownLoadUtils.getFileName(agent, filename);
+           
+           //设置响应头打开方式 content-disposition
            response.setHeader("content-disposition","attachment;filename="+filename);
    
            //4.将输入流的数据写出到输出流中
@@ -2030,7 +2456,34 @@ public class responseDemo06 extends HttpServlet {
            this.doPost(request,response);
        }
    }
-   
    ```
+```
+   
+   ```java
+   import sun.misc.BASE64Encoder;
+   import java.io.UnsupportedEncodingException;
+   import java.net.URLEncoder;
+   
+   
+   public class DownLoadUtils {
+   
+       public static String getFileName(String agent, String filename) throws UnsupportedEncodingException {
+           if (agent.contains("MSIE")) {
+               // IE浏览器
+               filename = URLEncoder.encode(filename, "utf-8");
+               filename = filename.replace("+", " ");
+           } else if (agent.contains("Firefox")) {
+               // 火狐浏览器
+               BASE64Encoder base64Encoder = new BASE64Encoder();
+               filename = "=?utf-8?B?" + base64Encoder.encode(filename.getBytes("utf-8")) + "?=";
+           } else {
+               // 其它浏览器
+               filename = URLEncoder.encode(filename, "utf-8");
+           }
+           return filename;
+       }
+   }
+   
+```
 
    

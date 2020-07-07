@@ -73,75 +73,75 @@
 
 ## 2.String类API
 
-- - | `char`          | `charAt(int index)`                                          | 返回指定索引处的 `char`值。                                  |
-    | --------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-    | `IntStream`     | `chars()`                                                    | 返回一个 `int`的流，从这个序列中扩展 `char`值。              |
-    | `int`           | `codePointAt(int index)`                                     | 返回指定索引处的字符（Unicode代码点）。                      |
-    | `int`           | `codePointBefore(int index)`                                 | 返回指定索引之前的字符（Unicode代码点）。                    |
-    | `int`           | `codePointCount(int beginIndex,  int endIndex)`              | 返回此 `String`的指定文本范围内的Unicode代码点数。           |
-    | `IntStream`     | `codePoints()`                                               | 从此序列返回码流值。                                         |
-    | `int`           | `compareTo(String anotherString)`                            | 按字典顺序比较两个字符串。                                   |
-    | `int`           | `compareToIgnoreCase(String str)`                            | 按字典顺序比较两个字符串，忽略病例差异。                     |
-    | `String`        | `concat(String str)`                                         | 将指定的字符串连接到该字符串的末尾。                         |
-    | `boolean`       | `contains(CharSequence s)`                                   | 当且仅当此字符串包含指定的char值序列时才返回true。           |
-    | `boolean`       | `contentEquals(CharSequence cs)`                             | 将此字符串与指定的 `CharSequence` 。                         |
-    | `boolean`       | `contentEquals(StringBuffer sb)`                             | 将此字符串与指定的 `StringBuffer` 。                         |
-    | `static String` | `copyValueOf(char[] data)`                                   | 相当于 `valueOf(char[])`。                                   |
-    | `static String` | `copyValueOf(char[] data,  int offset, int count)`           | 相当于 `valueOf(char[],  int, int)`                          |
-    | `boolean`       | `endsWith(String suffix)`                                    | 测试此字符串是否以指定的后缀结尾。                           |
-    | `boolean`       | `equals(Object anObject)`                                    | 将此字符串与指定对象进行比较。                               |
-    | `boolean`       | `equalsIgnoreCase(String anotherString)`                     | 将此 `String`与另一个 `String`比较，忽略案例注意事项。       |
-    | `static String` | `format(String format,  Object... args)`                     | 使用指定的格式字符串和参数返回格式化的字符串。               |
-    | `static String` | `format(Locale l, String format,  Object... args)`           | 使用指定的区域设置，格式字符串和参数返回格式化的字符串。     |
-    | `byte[]`        | `getBytes()`                                                 | 使用平台的默认字符集将该 `String`编码为一系列字节，将结果存储到新的字节数组中。 |
-    | `byte[]`        | `getBytes(String charsetName)`                               | 使用命名的字符集将该 `String`编码为一系列字节，将结果存储到新的字节数组中。 |
-    | `byte[]`        | `getBytes(Charset charset)`                                  | 使用给定的[charset](../../java/nio/charset/Charset.html)将该`String`编码为字节序列，将结果存储到新的字节数组中。 |
-    | `void`          | `getChars(int srcBegin,  int srcEnd, char[] dst, int dstBegin)` | 将此字符串中的字符复制到目标字符数组中。                     |
-    | `int`           | `hashCode()`                                                 | 返回此字符串的哈希码。                                       |
-    | `int`           | `indexOf(int ch)`                                            | 返回指定字符第一次出现的字符串内的索引。                     |
-    | `int`           | `indexOf(int ch,  int fromIndex)`                            | 返回指定字符第一次出现的字符串内的索引，以指定的索引开始搜索。 |
-    | `int`           | `indexOf(String str)`                                        | 返回指定子字符串第一次出现的字符串内的索引。                 |
-    | `int`           | `indexOf(String str,  int fromIndex)`                        | 返回指定子串的第一次出现的字符串中的索引，从指定的索引开始。 |
-    | `String`        | `intern()`                                                   | 返回字符串对象的规范表示。                                   |
-    | `boolean`       | `isEmpty()`                                                  | 返回 `true`如果，且仅当 [`length()`](../../java/lang/String.html#length--)为  `0` 。 |
-    | `static String` | `join(CharSequence delimiter, CharSequence... elements)`     | 返回一个由连接在一起的 `CharSequence elements`副本组成的新字符串，并附带指定的  `delimiter`的副本。 |
-    | `static String` | `join(CharSequence delimiter, Iterable<? extends CharSequence> elements)` | 返回一个新 `String`的副本组成 `CharSequence  elements`与指定的副本一起加入 `delimiter` 。 |
-    | `int`           | `lastIndexOf(int ch)`                                        | 返回指定字符的最后一次出现的字符串中的索引。                 |
-    | `int`           | `lastIndexOf(int ch,  int fromIndex)`                        | 返回指定字符的最后一次出现的字符串中的索引，从指定的索引开始向后搜索。 |
-    | `int`           | `lastIndexOf(String str)`                                    | 返回指定子字符串最后一次出现的字符串中的索引。               |
-    | `int`           | `lastIndexOf(String str,  int fromIndex)`                    | 返回指定子字符串的最后一次出现的字符串中的索引，从指定索引开始向后搜索。 |
-    | `int`           | `length()`                                                   | 返回此字符串的长度。                                         |
-    | `boolean`       | `matches(String regex)`                                      | 告诉这个字符串是否匹配给定的 [regular  expression](../util/regex/Pattern.html#sum) 。 |
-    | `int`           | `offsetByCodePoints(int index,  int codePointOffset)`        | 返回这个 `String`中的索引，它与给定的 `index`由  `codePointOffset`代码点偏移。 |
-    | `boolean`       | `regionMatches(boolean ignoreCase,  int toffset, String other, int ooffset,  int len)` | 测试两个字符串区域是否相等。                                 |
-    | `boolean`       | `regionMatches(int toffset,  String other, int ooffset,  int len)` | 测试两个字符串区域是否相等。                                 |
-    | `String`        | `replace(char oldChar,  char newChar)`                       | 返回从替换所有出现的导致一个字符串 `oldChar` ，在这个字符串  `newChar` 。 |
-    | `String`        | `replace(CharSequence target, CharSequence replacement)`     | 将与字面目标序列匹配的字符串的每个子字符串替换为指定的文字替换序列。 |
-    | `String`        | `replaceAll(String regex,  String replacement)`              | 用给定的替换替换与给定的 [regular  expression](../util/regex/Pattern.html#sum)匹配的此字符串的每个子字符串。 |
-    | `String`        | `replaceFirst(String regex,  String replacement)`            | 用给定的替换替换与给定的 [regular  expression](../util/regex/Pattern.html#sum)匹配的此字符串的第一个子字符串。 |
-    | `String[]`      | `split(String regex)`                                        | 将此字符串拆分为给定的 [regular  expression的](../util/regex/Pattern.html#sum)匹配。 |
-    | `String[]`      | `split(String regex,  int limit)`                            | 将此字符串拆分为给定的 [regular  expression的](../util/regex/Pattern.html#sum)匹配。 |
-    | `boolean`       | `startsWith(String prefix)`                                  | 测试此字符串是否以指定的前缀开头。                           |
-    | `boolean`       | `startsWith(String prefix,  int toffset)`                    | 测试在指定索引处开始的此字符串的子字符串是否以指定的前缀开头。 |
-    | `CharSequence`  | `subSequence(int beginIndex,  int endIndex)`                 | 返回一个字符序列，该序列是该序列的子序列。                   |
-    | `String`        | `substring(int beginIndex)`                                  | 返回一个字符串，该字符串是此字符串的子字符串。               |
-    | `String`        | `substring(int beginIndex,  int endIndex)`                   | 返回一个字符串，该字符串是此字符串的子字符串。               |
-    | `char[]`        | `toCharArray()`                                              | 将此字符串转换为新的字符数组。                               |
-    | `String`        | `toLowerCase()`                                              | 使用默认语言环境的规则将此 `String`所有字符转换为小写。      |
-    | `String`        | `toLowerCase(Locale locale)`                                 | 将此 `String`所有字符转换为小写，使用给定的 `Locale`的规则。 |
-    | `String`        | `toString()`                                                 | 这个对象（已经是一个字符串！）                               |
-    | `String`        | `toUpperCase()`                                              | 将此 `String`所有字符转换为大写，使用默认语言环境的规则。    |
-    | `String`        | `toUpperCase(Locale locale)`                                 | 将此 `String`所有字符转换为大写，使用给定的 `Locale`的规则。 |
-    | `String`        | `trim()`                                                     | 返回一个字符串，其值为此字符串，并删除任何前导和尾随空格。   |
-    | `static String` | `valueOf(boolean b)`                                         | 返回 `boolean`参数的字符串表示形式。                         |
-    | `static String` | `valueOf(char c)`                                            | 返回 `char`参数的字符串表示形式。                            |
-    | `static String` | `valueOf(char[] data)`                                       | 返回 `char`数组参数的字符串表示形式。                        |
-    | `static String` | `valueOf(char[] data,  int offset, int count)`               | 返回 `char`数组参数的特定子阵列的字符串表示形式。            |
-    | `static String` | `valueOf(double d)`                                          | 返回 `double`参数的字符串表示形式。                          |
-    | `static String` | `valueOf(float f)`                                           | 返回 `float`参数的字符串表示形式。                           |
-    | `static String` | `valueOf(int i)`                                             | 返回 `int`参数的字符串表示形式。                             |
-    | `static String` | `valueOf(long l)`                                            | 返回 `long`参数的字符串表示形式。                            |
-    | `static String` | `valueOf(Object obj)`                                        | 返回 `Object`参数的字符串表示形式。                          |
+| `char`          | `charAt(int index)`                                          | 返回指定索引处的 `char`值。                                  |
+| --------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| `IntStream`     | `chars()`                                                    | 返回一个 `int`的流，从这个序列中扩展 `char`值。              |
+| `int`           | `codePointAt(int index)`                                     | 返回指定索引处的字符（Unicode代码点）。                      |
+| `int`           | `codePointBefore(int index)`                                 | 返回指定索引之前的字符（Unicode代码点）。                    |
+| `int`           | `codePointCount(int beginIndex,  int endIndex)`              | 返回此 `String`的指定文本范围内的Unicode代码点数。           |
+| `IntStream`     | `codePoints()`                                               | 从此序列返回码流值。                                         |
+| `int`           | `compareTo(String anotherString)`                            | 按字典顺序比较两个字符串。                                   |
+| `int`           | `compareToIgnoreCase(String str)`                            | 按字典顺序比较两个字符串，忽略病例差异。                     |
+| `String`        | `concat(String str)`                                         | 将指定的字符串连接到该字符串的末尾。                         |
+| `boolean`       | `contains(CharSequence s)`                                   | 当且仅当此字符串包含指定的char值序列时才返回true。           |
+| `boolean`       | `contentEquals(CharSequence cs)`                             | 将此字符串与指定的 `CharSequence` 。                         |
+| `boolean`       | `contentEquals(StringBuffer sb)`                             | 将此字符串与指定的 `StringBuffer` 。                         |
+| `static String` | `copyValueOf(char[] data)`                                   | 相当于 `valueOf(char[])`。                                   |
+| `static String` | `copyValueOf(char[] data,  int offset, int count)`           | 相当于 `valueOf(char[],  int, int)`                          |
+| `boolean`       | `endsWith(String suffix)`                                    | 测试此字符串是否以指定的后缀结尾。                           |
+| `boolean`       | `equals(Object anObject)`                                    | 将此字符串与指定对象进行比较。                               |
+| `boolean`       | `equalsIgnoreCase(String anotherString)`                     | 将此 `String`与另一个 `String`比较，忽略案例注意事项。       |
+| `static String` | `format(String format,  Object... args)`                     | 使用指定的格式字符串和参数返回格式化的字符串。               |
+| `static String` | `format(Locale l, String format,  Object... args)`           | 使用指定的区域设置，格式字符串和参数返回格式化的字符串。     |
+| `byte[]`        | `getBytes()`                                                 | 使用平台的默认字符集将该 `String`编码为一系列字节，将结果存储到新的字节数组中。 |
+| `byte[]`        | `getBytes(String charsetName)`                               | 使用命名的字符集将该 `String`编码为一系列字节，将结果存储到新的字节数组中。 |
+| `byte[]`        | `getBytes(Charset charset)`                                  | 使用给定的[charset](../../java/nio/charset/Charset.html)将该`String`编码为字节序列，将结果存储到新的字节数组中。 |
+| `void`          | `getChars(int srcBegin,  int srcEnd, char[] dst, int dstBegin)` | 将此字符串中的字符复制到目标字符数组中。                     |
+| `int`           | `hashCode()`                                                 | 返回此字符串的哈希码。                                       |
+| `int`           | `indexOf(int ch)`                                            | 返回指定字符第一次出现的字符串内的索引。                     |
+| `int`           | `indexOf(int ch,  int fromIndex)`                            | 返回指定字符第一次出现的字符串内的索引，以指定的索引开始搜索。 |
+| `int`           | `indexOf(String str)`                                        | 返回指定子字符串第一次出现的字符串内的索引。                 |
+| `int`           | `indexOf(String str,  int fromIndex)`                        | 返回指定子串的第一次出现的字符串中的索引，从指定的索引开始。 |
+| `String`        | `intern()`                                                   | 返回字符串对象的规范表示。                                   |
+| `boolean`       | `isEmpty()`                                                  | 返回 `true`如果，且仅当 [`length()`](../../java/lang/String.html#length--)为  `0` 。 |
+| `static String` | `join(CharSequence delimiter, CharSequence... elements)`     | 返回一个由连接在一起的 `CharSequence elements`副本组成的新字符串，并附带指定的  `delimiter`的副本。 |
+| `static String` | `join(CharSequence delimiter, Iterable elements)`            | 返回一个新 `String`的副本组成 `CharSequence  elements`与指定的副本一起加入 `delimiter` 。 |
+| `int`           | `lastIndexOf(int ch)`                                        | 返回指定字符的最后一次出现的字符串中的索引。                 |
+| `int`           | `lastIndexOf(int ch,  int fromIndex)`                        | 返回指定字符的最后一次出现的字符串中的索引，从指定的索引开始向后搜索。 |
+| `int`           | `lastIndexOf(String str)`                                    | 返回指定子字符串最后一次出现的字符串中的索引。               |
+| `int`           | `lastIndexOf(String str,  int fromIndex)`                    | 返回指定子字符串的最后一次出现的字符串中的索引，从指定索引开始向后搜索。 |
+| `int`           | `length()`                                                   | 返回此字符串的长度。                                         |
+| `boolean`       | `matches(String regex)`                                      | 告诉这个字符串是否匹配给定的 [regular  expression](../util/regex/Pattern.html#sum) 。 |
+| `int`           | `offsetByCodePoints(int index,  int codePointOffset)`        | 返回这个 `String`中的索引，它与给定的 `index`由  `codePointOffset`代码点偏移。 |
+| `boolean`       | `regionMatches(boolean ignoreCase,  int toffset, String other, int ooffset,  int len)` | 测试两个字符串区域是否相等。                                 |
+| `boolean`       | `regionMatches(int toffset,  String other, int ooffset,  int len)` | 测试两个字符串区域是否相等。                                 |
+| `String`        | `replace(char oldChar,  char newChar)`                       | 返回从替换所有出现的导致一个字符串 `oldChar` ，在这个字符串  `newChar` 。 |
+| `String`        | `replace(CharSequence target, CharSequence replacement)`     | 将与字面目标序列匹配的字符串的每个子字符串替换为指定的文字替换序列。 |
+| `String`        | `replaceAll(String regex,  String replacement)`              | 用给定的替换替换与给定的 [regular  expression](../util/regex/Pattern.html#sum)匹配的此字符串的每个子字符串。 |
+| `String`        | `replaceFirst(String regex,  String replacement)`            | 用给定的替换替换与给定的 [regular  expression](../util/regex/Pattern.html#sum)匹配的此字符串的第一个子字符串。 |
+| `String[]`      | `split(String regex)`                                        | 将此字符串拆分为给定的 [regular  expression的](../util/regex/Pattern.html#sum)匹配。 |
+| `String[]`      | `split(String regex,  int limit)`                            | 将此字符串拆分为给定的 [regular  expression的](../util/regex/Pattern.html#sum)匹配。 |
+| `boolean`       | `startsWith(String prefix)`                                  | 测试此字符串是否以指定的前缀开头。                           |
+| `boolean`       | `startsWith(String prefix,  int toffset)`                    | 测试在指定索引处开始的此字符串的子字符串是否以指定的前缀开头。 |
+| `CharSequence`  | `subSequence(int beginIndex,  int endIndex)`                 | 返回一个字符序列，该序列是该序列的子序列。                   |
+| `String`        | `substring(int beginIndex)`                                  | 返回一个字符串，该字符串是此字符串的子字符串。               |
+| `String`        | `substring(int beginIndex,  int endIndex)`                   | 返回一个字符串，该字符串是此字符串的子字符串。               |
+| `char[]`        | `toCharArray()`                                              | 将此字符串转换为新的字符数组。                               |
+| `String`        | `toLowerCase()`                                              | 使用默认语言环境的规则将此 `String`所有字符转换为小写。      |
+| `String`        | `toLowerCase(Locale locale)`                                 | 将此 `String`所有字符转换为小写，使用给定的 `Locale`的规则。 |
+| `String`        | `toString()`                                                 | 这个对象（已经是一个字符串！）                               |
+| `String`        | `toUpperCase()`                                              | 将此 `String`所有字符转换为大写，使用默认语言环境的规则。    |
+| `String`        | `toUpperCase(Locale locale)`                                 | 将此 `String`所有字符转换为大写，使用给定的 `Locale`的规则。 |
+| `String`        | `trim()`                                                     | 返回一个字符串，其值为此字符串，并删除任何前导和尾随空格。   |
+| `static String` | `valueOf(boolean b)`                                         | 返回 `boolean`参数的字符串表示形式。                         |
+| `static String` | `valueOf(char c)`                                            | 返回 `char`参数的字符串表示形式。                            |
+| `static String` | `valueOf(char[] data)`                                       | 返回 `char`数组参数的字符串表示形式。                        |
+| `static String` | `valueOf(char[] data,  int offset, int count)`               | 返回 `char`数组参数的特定子阵列的字符串表示形式。            |
+| `static String` | `valueOf(double d)`                                          | 返回 `double`参数的字符串表示形式。                          |
+| `static String` | `valueOf(float f)`                                           | 返回 `float`参数的字符串表示形式。                           |
+| `static String` | `valueOf(int i)`                                             | 返回 `int`参数的字符串表示形式。                             |
+| `static String` | `valueOf(long l)`                                            | 返回 `long`参数的字符串表示形式。                            |
+| `static String` | `valueOf(Object obj)`                                        | 返回 `Object`参数的字符串表示形式。                          |
 
 ## 3.字符串类型和基本类型转换
 
@@ -304,19 +304,19 @@
 
 1. StringBuffer的构造方法
 
-   - - | Constructor                      | 描述                                                         |
-       | -------------------------------- | ------------------------------------------------------------ |
-       | `StringBuffer()`                 | 构造一个没有字符的字符串缓冲区，初始容量为16个字符。         |
-       | `StringBuffer(int capacity)`     | 构造一个没有字符的字符串缓冲区和指定的初始容量。             |
-       | `StringBuffer(CharSequence seq)` | 构造一个字符串缓冲区，其中包含与指定的 `CharSequence`相同的字符。 |
-       | `StringBuffer(String str)`       | 构造一个初始化为指定字符串内容的字符串缓冲区                 |
+   | Constructor                      | 描述                                                         |
+   | -------------------------------- | ------------------------------------------------------------ |
+   | `StringBuffer()`                 | 构造一个没有字符的字符串缓冲区，初始容量为16个字符。         |
+   | `StringBuffer(int capacity)`     | 构造一个没有字符的字符串缓冲区和指定的初始容量。             |
+   | `StringBuffer(CharSequence seq)` | 构造一个字符串缓冲区，其中包含与指定的 `CharSequence`相同的字符。 |
+   | `StringBuffer(String str)`       | 构造一个初始化为指定字符串内容的字符串缓冲区                 |
 
 2. StringBuffer常用方法
 
-   - - | Modifier and Type | 方法                             | 描述                                   |
-       | ----------------- | -------------------------------- | -------------------------------------- |
-       | `StringBuffer`    | `append()`                       | 将任意参数的字符串**追加**到序列中。   |
-       | `StringBuffer`    | `insert(int offset,  boolean b)` | 将任意参数的字符串**插入**到此序列中。 |
+   | Modifier and Type | 方法                             | 描述                                   |
+   | ----------------- | -------------------------------- | -------------------------------------- |
+   | `StringBuffer`    | `append()`                       | 将任意参数的字符串**追加**到序列中。   |
+   | `StringBuffer`    | `insert(int offset,  boolean b)` | 将任意参数的字符串**插入**到此序列中。 |
 
    
 
