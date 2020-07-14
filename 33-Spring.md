@@ -3092,26 +3092,31 @@ public JdbcTemplate(DataSource dataSource, boolean lazyInit) {
    - 配置application.xml文件
    
      ```xml
-  xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:context="http://www.springframework.org/schema/context"
      
-  http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
-     
-     
-     <!--    加载外部properties文件-->
-     <context:property-placeholder location="classpath:jdbc.properties"></context:property-placeholder>
-     <!--    数据源对象-->
-     <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
-         <property name="driverClass" value="${jdbc.driver}"></property>
-         <property name="jdbcUrl" value="${jdbc.url}"></property>
-         <property name="user" value="${jdbc.username}"></property>
-         <property name="password" value="${jdbc.password}"></property>
-     </bean>
-     
-     <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
-     	<property name="dataSource" ref="dataSource"></property>
-     </bean>
+     http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+          
      ```
-   
+     
+     ~~~xml
+      <!--    加载外部properties文件-->
+      <context:property-placeholder location="classpath:jdbc.properties"></context:property-placeholder>
+      <!--    数据源对象-->
+      <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+          <property name="driverClass" value="${jdbc.driver}"></property>
+          <property name="jdbcUrl" value="${jdbc.url}"></property>
+          <property name="user" value="${jdbc.username}"></property>
+          <property name="password" value="${jdbc.password}"></property>
+      </bean>
+      
+      <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+      	<property name="dataSource" ref="dataSource"></property>
+      </bean>
+      ```
+     ~~~
+     
+     
+
    - 测试
    
      ```java

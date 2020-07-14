@@ -330,6 +330,7 @@ RESTful 编程风格的请求
    ```xml
    <!--全局初始化参数-->
    <context-param>
+       <!--此名称是固定的，不要改变-->
        <param-name>contextConfigLocation</param-name>
        <!--注意：这里不使用classpath也可以，虽然这里会爆红，但是可以正常运行-->
        <param-value>classpath:application.xml</param-value>
