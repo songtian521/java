@@ -714,6 +714,12 @@ Handler执行完成后，向DispatcherServlet 返回一个ModelAndView对象；�
      - `params = {"accountName"}`，表示请求参数必须有accountName
      - `params = {"moeny!100"}`，表示请求参数中money不能是100
      
+     params同样可以用于设置响应编码，可以有效防止响应字符串乱码 
+     
+     ```java
+      @RequestMapping(value = "/roleList",produces = "text/html;charset=UTF-8")
+     ```
+     
    - headers：用于指定限制请求消息头的条件
 
    **注意：以上四个属性只要出现 2 个或以上时，他们的关系是`与`的关系**
@@ -1112,7 +1118,7 @@ xmlns:mvc="http://www.springframework.org/schema/mvc"
 
   - 第二种：
 
-    接收的请求参数是 json 格式数据。需要借助一个注解实现。
+    接收的请求参数是 json 格式数据。需要借助`@RequestBody`注解实现，详情见3.2.2
 
 代码实现：
 
@@ -1245,79 +1251,129 @@ xmlns:mvc="http://www.springframework.org/schema/mvc"
    http://localhost:8080/spring_mvc/form.jsp
    ```
 
-### 3.2.2 @RequestBody响应json数据
+### 3.2.2 @RequestBody注解说明
 
-作用：
+作用：@ResponseBody注解的作用是将controller的方法返回的对象（java对象）通过适当的转换器转换为指定的格式（XML，JSON等）之后，写入到response对象的body区（响应给客户端）
 
-该注解用于将 Controller 的方法返回的对象，通过 `HttpMessageConverter `接口转换为指定格式的数据如：json,xml 等，通过 Response 响应给客户端
+1. @RequestBody注解使用在方法上时
 
-当使用ajax提交时，可以指定contentType为json形式，那么**在方法参数位置使用`@RequestBody`**可以直接接收集合数据而无需使用POJO进行包装。
+   ```java
+   @RequestMapping("/login")
+   @ResponseBody
+   public User login(User user){
+       return user;
+   }
+   
+   
+   User字段：userName pwd
+   那么在前台接收到的数据为：'{"userName":"xxx","pwd":"xxx"}'
+   
+   效果等同于如下代码：
+   @RequestMapping("/login")
+   public void login(User user, HttpServletResponse response){
+       response.getWriter.write(JSONObject.fromObject(user).toString());
+   }
+   ```
 
-```jsp
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<html>
-<head>
-    <title>Title</title>
-    <script src="${pageContext.request.contextPath}/js/jquery-3.3.1.js"></script>
-    <script>
-        let userList = new Array();
-        userList.push({user:"lisi",age:12})
-        userList.push({user:"zhangsan",age:15})
+2. @RequestBody注解使用在方法参数上时
 
-        $.ajax({
-            type:"POST",
-            url:"${pageContext.request.contextPath}/request5",
-            data:JSON.stringify(userList),
-            contentType:"application/json;charset=utf-8"
-        })
-    </script>
-</head>
-<body>
+   如下案例：将客户端传入的JSON数据映射为pojo对象
 
-</body>
-</html>
-```
+   当使用ajax提交JSON数据时，可以指定contentType为json形式，那么**在方法参数位置使用`@RequestBody`**可以直接接收集合数据而无需使用POJO进行包装。
 
-```java
-@RequestMapping("/request5")
-@ResponseBody
-public void save5(@RequestBody List<user> userList){
-// @RequestBody主要用来接收前端传递给后端的json字符串中的数据的(请求体中的数据的),GET方式无请求体，所以需要用POST方式进行提交
-//一个请求，只有一个RequestBody；一个请求，可以有多个RequestParam。
-    System.out.println(userList);
-}
-```
+   ```jsp
+   <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+   <html>
+   <head>
+       <title>Title</title>
+       <script src="${pageContext.request.contextPath}/js/jquery-3.3.1.js"></script>
+       <script>
+           let userList = new Array();
+           userList.push({user:"lisi",age:12})
+           userList.push({user:"zhangsan",age:15})
+   
+           $.ajax({
+               type:"POST",
+               url:"${pageContext.request.contextPath}/request5",
+               data:JSON.stringify(userList),
+               contentType:"application/json;charset=utf-8"
+           })
+       </script>
+   </head>
+   <body>
+   
+   </body>
+   </html>
+   ```
 
-```java
-public class user {
-    private String user;
-    private int age;
-    // 省略get与set方法
-    // 省略toString方法
-}
-```
+   ```java
+   @RequestMapping("/request5")
+   @ResponseBody
+   public void save5(@RequestBody List<user> userList){
+   // @RequestBody主要用来接收前端传递给后端的json字符串中的数据的(请求体中的数据的),GET方式无请求体，所以需要用POST方式进行提交
+   //一个请求，只有一个RequestBody；一个请求，可以有多个RequestParam。
+       System.out.println(userList);
+   }
+   ```
 
-访问地址：
+   ```java
+   public class user {
+       private String user;
+       private int age;
+       // 省略get与set方法
+       // 省略toString方法
+   }
+   ```
 
-```
-http://localhost:8080/spring_mvc/ajax.jsp
-```
+   访问地址：
 
-存在问题：jQuery文件无法访问
+   ```
+   http://localhost:8080/spring_mvc/ajax.jsp
+   ```
 
-原因：原因是SpringMVC的前端控制器`DispatcherServlet`的`url-pattern`配置的是`/`，代表对所有的资源都进行过滤操作
+   存在问题：jQuery文件无法访问
 
-解决方法：在spring-mvc.xml中指定放行静态资源，以下两种任选其一即可
+   原因：原因是SpringMVC的前端控制器`DispatcherServlet`的`url-pattern`配置的是`/`，代表对所有的资源都进行过滤操作
 
-```xml
-<!--    开放资源的访问权限-->
-<!--    <mvc:resources mapping="/js/**" location="/js/"/>-->
-    
-<!--    springMVC尝试去找静态资源，如果找不到，则交还给tomcat去寻找此静态资源-->
-    <mvc:default-servlet-handler/>
-```
+   解决方法：在spring-mvc.xml中指定放行静态资源，以下两种任选其一即可
 
-### 3.2.3 请求数据乱码问题
+   ```xml
+   <!--    开放资源的访问权限-->
+   <!--    <mvc:resources mapping="/js/**" location="/js/"/>-->
+       
+   <!--    springMVC尝试去找静态资源，如果找不到，则交还给tomcat去寻找此静态资源-->
+   <mvc:default-servlet-handler/>
+   ```
+
+
+### 3.2.3 @RestController与@Controller
+
+Spring 3.x 或使用`@Controller`情况下，在方法上使用`@ResponseBody`注释时，Spring会转换返回值并自动将其写入HTTP响应。
+
+Spring 4.0引入了`@RestController`，这是一个控制器的专用版本，它是一个方便的注释，除了自动添加`@Controller`和`@ResponseBody`注释之外没有其他作用。通过使用`@RestController`批注对控制器类进行注释，不再需要将`@ResponseBody`添加到所有请求映射方法中。`@ResponseBody`注释默认处于活动状态。
+
+- 前后端分离：
+
+  @RestController注解是@Controller和@ResponseBody的合集，表示这是个控制器 bean，并且是将函数的返回值直接填入 HTTP 响应体中，是 REST 风格的控制器。
+
+- 前后端不分离：
+
+  单独使用 @Controller 不加 @ResponseBody的话一般使用在要返回一个视图的情况，这种情况属于比较传统的 Spring MVC 的应用。@Controller +@ResponseBody 返回 JSON 或 XML 形式数据。
+
+区别：
+
+1. `@RestController`注解相当于`@ResponseBody`与`@Controller`合在一起的作用。
+2. 如果**只是使用`@RestController`注解Controller类**，则Controller中的方法**无法返回jsp页面**，配置的视图解析器InternalResourceViewResolver不起作用，返回的内容就是return 里的内容。例如：本来应该到success.jsp页面的，则其显示success。
+3. 如果需要返回到指定页面，则需要用 `@Controller`配合视图解析器InternalResourceViewResolver才行。
+4. 如果需要返回JSON，XML或自定义mediaType内容到页面，则需要在对应的方法上加上`@ResponseBody`注解。
+
+总结：
+
+总之，使用`@Controller`注解在对应的方法上，视图解析器可以解析return 的jsp、html页面，并且跳转到相应页面。若要返回json等内容到页面，则需要加`@ResponseBody`注解。使用`@RestController`注解，返回json数据不需要在方法前面加`@ResponseBody`注解，但使用`@RestController`这个注解，就不能返回jsp、html页面，视图解析器无法解析jsp、html页面。
+
+
+
+### 3.2.4 请求数据乱码问题
 
 当post请求时，中文数据会出现乱码，我们可以设置一个过滤器来进行编码的过滤。
 
@@ -1373,7 +1429,7 @@ http://localhost:8080/spring_mvc/ajax.jsp
 
 
 
-### 3.2.4 参数绑定注解
+### 3.2.5 参数绑定注解
 
 ```java
 @RequestMapping("/request6")
@@ -1401,7 +1457,7 @@ http://localhost:8080/spring_mvc/request6?username=21&name=12
 - required：是否包含该参数，默认为true，表示该请求路径中必须包含该参数，如果不包含就报错。
 - defaultValue：默认参数值，如果设置了该值，`required=true`将失效，自动为false,如果没有传该参数，就使用默认值
 
-### 3.2.5 获得Restful风格的参数
+### 3.2.6 获得Restful风格的参数
 
 Restful是一种软件架构风格、设计风格，而不是标准，只是提供了一组设计原则和约束条件。主要用于客户端和服务器交互类的软件，基于这个风格设计的软件可以更简洁，更有层次，更易于实现缓存机制等。
 
@@ -1533,7 +1589,7 @@ public String testRestfulURLGET(@PathVariable("id")Integer id){
 
 
 
-### 3.2.6 自定义类型转换器
+### 3.2.7 自定义类型转换器
 
 SpringMVC 默认已经提供了一些常用的类型转换器，例如客户端提交的字符串转换成int型进行参数设置。
 

@@ -2057,7 +2057,10 @@ IAccountService as = ac.getBean("accountService",IAccountService.class);
 3. 使用@ContextConfiguration指定配置文件或配置类
 
    ```java
+   // 指定配置文件
    //@ContextConfiguration("classpath:application.xml")
+   
+   // 指定配置类
    @ContextConfiguration(classes = SpringConfiguration.class)
    @RunWith(SpringJUnit4ClassRunner.class)
    public class springTest {
@@ -3540,7 +3543,7 @@ Spring 的声明式事务顾名思义就是**采用声明的方式来处理事�
        <property name="dataSource" ref="dataSource"></property>
    </bean>
    
-   <!--    配置注解Transactional 后必须进行如下操作-->
+   <!--    配置注解@Transactional 后必须进行如下操作-->
    <!--    事务注解驱动，transaction-manager表示指定使用哪个事务管理器-->
    <tx:annotation-driven transaction-manager="transactionManager"></tx:annotation-driven>
    ```
