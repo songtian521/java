@@ -208,7 +208,7 @@ public static void main(String[] args) {
            </environment>
        </environments>
    
-   <!--    加载映射文件，注：因为在resources资源目录下创建了多个文件夹，所以需要使用如下结构，如果该配置文件位于resources目录的根目录下则直接写文件名即可-->
+   <!--加载映射文件，注：因为在resources资源目录下创建了多个文件夹，所以需要使用如下结构，如果该配置文件位于resources目录的根目录下则直接写文件名即可，注意：这里的分隔符是 / 而不是 . 号-->
        <mappers>
            <mapper resource="itcast/mapper/UserMapper.xml"></mapper>
        </mappers>
@@ -263,6 +263,8 @@ public static void main(String[] args) {
 </mapper>
 ```
 
+![](img/mybatis/mybatis映射文件概述.png)
+
 ## 3.4 MyBatis的增删改查操作
 
 1. 编写UserMapper映射文件
@@ -275,8 +277,7 @@ public static void main(String[] args) {
    
    <mapper namespace="userMapper" >
    <!--    查询操作-->
-   <!--    <select id="findAll" resultType="itcast.domain.User">-->
-       <select id="findAll" resultType="user">
+       <select id="findAll" resultType="itcast.domain.User">
            select * from user
        </select>
    
@@ -302,7 +303,7 @@ public static void main(String[] args) {
    
    </mapper>
    ```
-
+   
 2. 编写核心文件
 
    ```xml
@@ -332,12 +333,9 @@ public static void main(String[] args) {
            <mapper resource="itcast/mapper/UserMapper.xml"></mapper>
        </mappers>
    
-   
-   
-   
    </configuration>
    ```
-
+   
 3. 测试类
 
    ```java
@@ -365,7 +363,7 @@ public static void main(String[] args) {
        //    插入操作
        @Test
        public void test2() throws IOException {
-           // 模拟user对象
+           // 模拟数据
            User user = new User();
            user.setUsername("123");
            user.setPassword("123");
@@ -389,7 +387,7 @@ public static void main(String[] args) {
        //     更新操作
        @Test
        public void test3() throws IOException {
-           // 模拟user对象
+           // 模拟数据
            User user = new User();
            user.setId(3);
            user.setUsername("1234");
@@ -445,12 +443,8 @@ public static void main(String[] args) {
   - 修改语句使用update标签
   - 修改操作使用的API是``sqlSession.update(“命名空间.id”,实体对象);`
 - 修改操作的注意事项
-  - 删除语句使用delete标签
-  - Sql语句中使用#{任意字符串}方式引用传递的单个参数
-  - 删除操作使用的API是`sqlSession.delete(“命名空间.id”,Object);`
-- 删除操作的注意事项
-  - 删除语句使用delete标签
-  - Sql语句中使用#{任意字符串}方式引用传递的单个参数
+  - 删除语句使用`delete`标签
+  - Sql语句中使用`#{任意字符串}`方式引用传递的单个参数
   - 删除操作使用的API是`sqlSession.delete(“命名空间.id”,Object);`
 
 ## 3.5 MyBatis核心配置文件层级关系
@@ -469,7 +463,9 @@ public static void main(String[] args) {
   - databaseIdProvider 数据库厂商标识
   - mappers 映射器
 
-## 3.6 MyBatis常用配置解析
+## 3.6 MyBatis常用核心配置解析
+
+注：以下标签仅在mybatis核心配置文件中的操作
 
 1. environments标签
 
@@ -500,7 +496,7 @@ public static void main(String[] args) {
    其中，数据源（dataSource）类型有三种：
 
    - UNPOOLED：这个数据源的实现只是每次被请求时打开和关闭连接。
-   - POOLED：这种数据源的实现利用“池”的概念将 JDBC 连接对象组织起来。
+   - POOLED：这种数据源的实现利用**“池”**的概念将 JDBC 连接对象组织起来。
    - JNDI：这个数据源的实现是为了能在如 EJB 或应用服务器这类容器中使用，容器可以集中或在外部配置数据源，然后放置一个 JNDI 上下文的引用。
 
 2. mapper标签
@@ -545,9 +541,11 @@ public static void main(String[] args) {
    ```
 
    ```xml
-   <!--    使用jdbc.properties-->
+   <!--    加载jdbc.properties文件-->
    <!--    注：资源文件地址如果在resources根目录下则直接写文件名即可，如果不是则需要加路径-->
    <properties resource="jdbc.properties"></properties>
+   
+   <!--    数据源环境-->
    <environments default="development">
        <environment id="development">
            <transactionManager type="JDBC"></transactionManager>
@@ -574,7 +572,7 @@ public static void main(String[] args) {
    配置typeAliases标签
 
    ```xml
-   <!--    自定义别名 -->
+   <!--自定义别名 -->
    <typeAliases>
        <typeAlias type="itcast.domain.User" alias="user"></typeAlias>
    </typeAliases>
@@ -583,7 +581,7 @@ public static void main(String[] args) {
    现在的映射文件内就可以直接使用user了，例如
 
    ```xml
-   <insert id="save" parameterType="User">
+   <insert id="save" parameterType="user">
        insert into user values(#{id},#{username},#{password})
    </insert>
    ```
@@ -608,7 +606,8 @@ public static void main(String[] args) {
    <!--        <typeAlias type="itcast.domain.Role" alias="role"></typeAlias>-->
    <!--        <typeAlias type="itcast.domain.Order" alias="order"></typeAlias>-->
    
-   <!-- 扫描包，包下的所有实体类的别名就是其类名，既可以是首字母大写的，也可以是小写的
+   <!-- 
+   	扫描包，包下的所有实体类的别名就是其类名，既可以是首字母大写的，也可以是小写的
    	比如User实体类的别名既可以是User，也可以是user
    -->
            <package name="itcast.domain"/>
@@ -1039,9 +1038,28 @@ Mybatis 的映射文件中，前面我们的 SQL 都是比较简单的，有些�
 
 ## 5.2 动态SQL之`<foreach>`
 
-说明：循环执行sql的拼接操作，例如：`select * from user WHERE id in(1,2,3,4)`
+说明：foreach标签一般用于循环执行sql的拼接操作，例如：`select * from user WHERE id in(1,2,3,4)`
 
-示例：
+foreach标签的**属性用于遍历集合**
+
+collection传入的参数是你需要遍历的参数类型，**List对象默认用"list"代替作为键**，**数组对象有"array"代替作为键**，**Map对象没有默认的键**。注意编写时不要写`#{}`，直接写list或者array即可
+
+- **item：**集合中元素迭代时的别名，该参数为必选。
+- **index**：在list和数组中，index是元素的序号，在map中，index是元素的key，该参数可选
+- **open**：代表语句的开始部分，一般是`(`和`close=")"`合用。常用在`in()`，`values()`时。该参数可选
+- **separator**：元素之间的分隔符，例如在`in()`的时候，`separator=","`会自动在元素中间用`,`隔开，避免手动输入逗号导致sql错误，如`in(1,2,)`这样。该参数可选。
+- **close：**代表语句结束部分，一般是`)`和`open="("`合用。常用在`in()`，`values()`时。该参数可选。
+- **collection:** 要做foreach的对象，作为入参时，List对象默认用"list"代替作为键**，**数组对象有"array"代替作为键**，**Map对象没有默认的键。当然在作为入参时**可以使用@Param("keyName")来设置键，设置keyName后，list,array将会失效。** 除了入参这种情况外，还有一种作为参数对象的某个字段的时候。举个例子：
+   - 如果User有属性`List<Integer> ids`。入参是User对象，那么这个`collection = "ids"`
+   - 如果User有属性Ids，其中Ids是个对象，Ids有个属性List id，入参是User对象，那么`collection = "ids.id"`
+
+在**使用foreach的时候最关键的也是最容易出错的就是collection属性**，该属性是必须指定的，但是在不同情况下，该属性的值是不一样的，**主要有以下3种情况**： 
+
+- 如果传入的是**单参数且参数类型是一个List**的时候，collection属性值为**list** .
+- 如果传入的是**单参数且参数类型是一个array数组**的时候，collection的属性值为**array** .
+- 如果传入的**参数是多个**的时候，我们就**需要把它们封装成一个Map**了，当然单参数也可以封装成map，实际上如果你在传入参数的时候，在MyBatis里面也是会把它封装成一个Map的，map的key就是参数名，所以这个时候collection属性值就是传入的List或array对象在自己封装的map里面的key。
+
+**示例1：当foreach的collection属性为list或者array时如下：**
 
 1. 接口
 
@@ -1051,16 +1069,7 @@ Mybatis 的映射文件中，前面我们的 SQL 都是比较简单的，有些�
 
 2. mapper映射文件
 
-   foreach标签的属性含义如下：
-
-   - foreach：标签用于遍历集合
-- collection传入的参数是你需要遍历的参数类型，如果是list集合类型就写list，如果是array数组类型就写array，注意编写时不要写`#{}`
-   - open：代表语句的开始部分
-   - close：代表结束部分
-   - item：项，代表遍历集合的每个元素，生成的变量名，注意：对应数据库的id字段名
-   - separator：代表分隔符
-   
-```xml
+   ```xml
    <mapper namespace="itcast.dao.userMapper" >
        <select id="findByIds" parameterType="list" resultType="user">
            select * from user
@@ -1071,15 +1080,15 @@ Mybatis 的映射文件中，前面我们的 SQL 都是比较简单的，有些�
            </where>
        </select>
    </mapper>
-```
-
-执行测试，最终生成的未赋值的sql
-
-```sql
-   select * from user WHERE id in( ? , ? , ? ) 
-```
+   ```
 
 3. 测试
+
+   执行测试，最终生成的未赋值的sql
+
+   ```sql
+   select * from user WHERE id in( ? , ? , ? ) 
+   ```
 
    ```java
    @Test
@@ -1102,6 +1111,93 @@ Mybatis 的映射文件中，前面我们的 SQL 都是比较简单的，有些�
    
    }
    ```
+
+**示例2：当foreach的collection属性为map，且map中存储数组元素时如下：**
+
+1. 接口
+
+   ```java
+    List<User> findByIds(Map<String, int[]> userIds);
+   ```
+
+2. mapper映射文件
+
+   ```xml
+   <!--    根据ID们查询user表-->
+   <select id="findByIds" parameterType="map" resultType="user">
+       select * from user
+       <where>
+           <foreach collection="userIds" item="id" open="id in (" close=")" separator="," >
+               #{id}
+           </foreach>
+       </where>
+   </select>
+   ```
+   
+3. 测试文件
+
+   ```java
+   @Test
+   public void test1() throws IOException {
+       InputStream resourceAsStream = Resources.getResourceAsStream("com/itcast/sqlMapConfig.xml");
+       SqlSessionFactory build = new SqlSessionFactoryBuilder().build(resourceAsStream);
+       SqlSession sqlSession = build.openSession();
+       UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+   
+       // 模拟数据
+       Map<String,int[]> map = new HashMap<>();
+       int[] arr = {1, 2, 3};
+       map.put("userIds",arr);
+   
+       List<User> userList = mapper.findByIds(map);
+   
+       System.out.println(userList);
+   
+       sqlSession.close();
+   
+   }
+   ```
+
+**示例3：当foreach的collection属性为map，且map中存储单一数据时如下：**
+
+1. 接口
+
+   ```java
+   void addCheckgroupAndCheckitem(Map<String,int> map);
+   ```
+
+2. 映射文件
+
+   ```xml
+   <insert id="addCheckgroupAndCheckitem" parameterType="map">
+       insert into t_checkgroup_checkitem values(#{checkgroup_id},#{checkitem_id})
+   </insert>
+   ```
+
+3. 测试
+
+   ```java
+   @Test
+   public void test1() throws IOException {
+       InputStream resourceAsStream = Resources.getResourceAsStream("com/itcast/sqlMapConfig.xml");
+       SqlSessionFactory build = new SqlSessionFactoryBuilder().build(resourceAsStream);
+       SqlSession sqlSession = build.openSession();
+       UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+   
+       // 模拟数据
+       Map<String,int> map = new HashMap<>();
+       map.put("checkgroup_id",2);
+       map.put("checkitem_id",2);
+       // 执行插入操作
+       mapper.addCheckgroupAndCheckitem(map);
+       sqlSession.close();
+   
+   }
+   ```
+
+   
+
+
 
 ## 5.3 SQL片段抽取
 
@@ -1219,7 +1315,7 @@ MyBatis的传入参数parameterType类型分两种
 
 3. 集合类型
 
-   可以传递一个List或Array类型的对象作为参数，MyBatis会自动的将List或Array对象包装到一个Map对象中，List类型对象会使用list作为键名，而Array对象会用array作为键名。
+   可以传递一个List或Array类型的对象作为参数，**MyBatis会自动的将List或Array对象包装到一个Map对象中**，List类型对象会使用list作为键名，而Array对象会用array作为键名，map无默认键名
 
    集合类型通常用于构造`IN`条件，sql映射文件中使用foreach元素来遍历List或Array元素。
 
@@ -1239,19 +1335,19 @@ MyBatis的传入参数parameterType类型分两种
    - controller层
 
      ```java
-      @RequestMapping("/demo1")
-         @ResponseBody
-         public void findUser(){
+     @RequestMapping("/demo1")
+     @ResponseBody
+     public void findUser(){
      
-             Map<String,int[]> map = new HashMap<>();
-             int[] arr = {1, 2, 3};
-             map.put("ids",arr);
-             List<user> userList = userDao.findUser(map);
+         Map<String,int[]> map = new HashMap<>();
+         int[] arr = {1, 2, 3};
+         map.put("ids",arr);
+         List<user> userList = userDao.findUser(map);
      
-             System.out.println(userList);
+         System.out.println(userList);
      
-             // [user{id=1, username='admin', password='admin'}, user{id=2, username='123', password='123'}, user{id=3, username='zhangsan', password='123'}]
-         }
+         // [user{id=1, username='admin', password='admin'}, user{id=2, username='123', password='123'}, user{id=3, username='zhangsan', password='123'}]
+     }
      ```
 
    - dao接口
@@ -1274,28 +1370,16 @@ MyBatis的传入参数parameterType类型分两种
      </select>
      ```
 
-     
 
 ## 5.5 selectKey 标签
 
 作用：主键回填，一般用于在插入数据的时候获取插入数据的id值
 
-示例：
-
-```xml
-<insert id="addGroup" parameterType="com.itcast.pojo.CheckGroup">
-
-    <selectKey resultType="int" keyProperty="id" order="AFTER">
-        select LAST_INSERT_ID()
-    </selectKey>
-
-    insert into t_checkgroup values(#{id},#{code},#{name},#{helpCode},#{sex},#{remark},#{attention})
-</insert>
-```
-
 属性说明：
 
 - order：取值有两个，表示操作在什么时候去执行，一般选择AFTER，因为只有先插入数据了才有id产生
+
+  表明此代码相对于insert语句的执行顺序，**BEFORE(适用于Oralce等取序列的数据库)**，**ARTER(适用于MySQL等支持自增长的数据库)；**
 
   - AFTER：表示在sql语句执行之后进行操作
   - BEFORE：表示在sql语句执行之前进行操作
@@ -1305,6 +1389,170 @@ MyBatis的传入参数parameterType类型分两种
 - keyProperty：selectKey语句结果应该被设置的目标属性。简单来说就是指定sql的哪一列需要查询
 
 - resultType：结果集类型，表示返回数据的类型，MyBatis 通常可以算出来,但是写上也没有问题。MyBatis 允许任何简单类型用作主键的类型,包括字符串
+
+注意：在MyBatis中添加操作**返回的是记录数**并非记录主键id。因此，如果需要获取新添加记录的主键值，需要在执行添加操作之后，**直接读取Java对象的主键属性**。
+
+
+
+示例1：添加单一记录时返回主键ID
+
+1. 接口
+
+   ```java
+   int addUser(User user);
+   ```
+
+2. mapper映射文件
+
+   注意，这里没有resultType，但是接口上有返回值，是因为mybatis会帮我们返回执行成功的记录数
+
+   ```xml
+   <!--    插入数据-->
+   <insert id="addUser" parameterType="user">
+       <selectKey resultType="int" order="AFTER" keyProperty="id">
+           select LAST_INSERT_ID()
+       </selectKey>
+       insert into user(username,password) values(#{username},#{password})
+   </insert>
+   ```
+
+3. 测试
+
+   ```java
+   @Test
+   public void test2() throws IOException {
+       InputStream resourceAsStream = Resources.getResourceAsStream("com/itcast/sqlMapConfig.xml");
+       SqlSessionFactory build = new SqlSessionFactoryBuilder().build(resourceAsStream);
+       SqlSession sqlSession = build.openSession(true);
+       UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+   
+       // 模拟数据
+       User user = new User();
+       user.setUsername("zhangsan");
+       user.setPassword("1234");
+       // 调用插入方法
+       int count = mapper.addUser(user);
+       // 返回成功的记录数
+       System.out.println(count);
+       // 获取插入数据后返回的id
+       System.out.println(user.getId());
+   
+       sqlSession.close();
+   
+   }
+   ```
+
+
+
+示例2：批量增加记录时返回主键ID
+
+与单条记录插入类似，只不过要注意：`parameterType="list"`，原理类似，只不过批量插入是针对每个插入对象User
+
+**注意：MyBatis从3.3.1版本开始支持批量添加记录并返回各记录主键字段值。**
+
+说明：
+
+| 属性               | 说明                                                         |
+| ------------------ | ------------------------------------------------------------ |
+| `useGeneratedKeys` | （仅适用于 insert 和 update）这会令 MyBatis 使用 JDBC 的 getGeneratedKeys 方法来取出由数据库内部生成的主键（比如：像 MySQL 和 SQL Server 这样的关系型数据库管理系统的自动递增字段），默认值：false。 |
+| `keyProperty`      | （仅适用于 insert 和 update）指定能够唯一识别对象的属性，MyBatis 会使用 getGeneratedKeys 的返回值或 insert 语句的 selectKey 子元素设置它的值，默认值：未设置（`unset`）。如果生成列不止一个，可以用逗号分隔多个属性名称。 |
+| `keyColumn`        | （仅适用于 insert 和 update）设置生成键值在表中的列名，在某些数据库（像 PostgreSQL）中，当主键列不是表中的第一列的时候，是必须设置的。如果生成列不止一个，可以用逗号分隔多个属性名称。 |
+
+1. 接口
+
+   ```java
+   void addUser2(List list);
+   ```
+
+2. 映射文件
+
+   ```xml
+   <!--    插入数据2-->
+   <insert id="addUser2" parameterType="list"  useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+   
+       insert into user(username,password) values
+       <foreach collection="list" item="item" separator="," >
+           (
+           #{item.username},
+           #{item.password}
+           )
+       </foreach>
+   </insert>
+   ```
+
+3. 测试
+
+   ```java
+   @Test
+   public void test3() throws IOException {
+       InputStream resourceAsStream = Resources.getResourceAsStream("com/itcast/sqlMapConfig.xml");
+       SqlSessionFactory build = new SqlSessionFactoryBuilder().build(resourceAsStream);
+       SqlSession sqlSession = build.openSession(true);
+       UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+   
+       // 模拟数据
+       User user = new User();
+       user.setUsername("zhangsan1");
+       user.setPassword("12341");
+   
+       User user2 = new User();
+       user2.setUsername("zhangsan2");
+       user2.setPassword("12342");
+   
+       List<User> list = new ArrayList<>();
+       list.add(user);
+       list.add(user2);
+       // 调用插入方法
+       mapper.addUser2(list);
+       // 获取插入数据后返回的id
+       System.out.println(list.get(0).getId());
+       System.out.println(list.get(1).getId());
+   
+       sqlSession.close();
+   
+   }
+   ```
+
+示例3：不使用selectKey标签方式获取插入数据的ID
+
+1. 接口
+
+   ```java
+   void addUser3(User user);
+   ```
+
+2. 映射文件
+
+   ```xml
+   <!--    插入数据3 -->
+   <insert id="addUser3" parameterType="user" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+       insert into user(username,password) values(#{username},#{password})
+   </insert>
+   ```
+
+3. 测试
+
+   ```java
+   @Test
+   public void test2() throws IOException {
+       InputStream resourceAsStream = Resources.getResourceAsStream("com/itcast/sqlMapConfig.xml");
+       SqlSessionFactory build = new SqlSessionFactoryBuilder().build(resourceAsStream);
+       SqlSession sqlSession = build.openSession(true);
+       UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+   
+       // 模拟数据
+       User user = new User();
+       user.setUsername("zhangsan");
+       user.setPassword("1234");
+       // 调用插入方法
+       mapper.addUser3(user);
+       // 获取插入数据后返回的id
+       System.out.println(user.getId());
+   
+       sqlSession.close();
+   
+   }
+   ```
 
 
 
@@ -1368,11 +1616,17 @@ MyBatis的传入参数parameterType类型分两种
 
 # 6. MyBatis核心配置文件深入
 
-## 6.1 typeHandlers标签
+## 6.1 typeHandlers标签（类型处理器）
 
 无论是 MyBatis 在预处理语句（PreparedStatement）中设置一个参数时，还是从结果集中取出一个值时， 都会用类型处理器将获取的值以合适的方式转换成 Java 类型。下表描述了一些默认的类型处理器（截取部分）。
 
-![](img/mybatis/默认类型处理器.png)
+| 类型处理器           | Java 类型                      | JDBC 类型                            |
+| :------------------- | :----------------------------- | :----------------------------------- |
+| `BooleanTypeHandler` | `java.lang.Boolean`, `boolean` | 数据库兼容的 `BOOLEAN`               |
+| `ByteTypeHandler`    | `java.lang.Byte`, `byte`       | 数据库兼容的 `NUMERIC` 或 `BYTE`     |
+| `ShortTypeHandler`   | `java.lang.Short`, `short`     | 数据库兼容的 `NUMERIC` 或 `SMALLINT` |
+| `IntegerTypeHandler` | `java.lang.Integer`, `int`     | 数据库兼容的 `NUMERIC` 或 `INTEGER`  |
+| `LongTypeHandler`    | `java.lang.Long`, `long`       | 数据库兼容的 `NUMERIC` 或 `BIGINT`   |
 
 你可以重写类型处理器或创建你自己的类型处理器来处理不支持的或非标准的类型。具体做法为：实现 `org.apache.ibatis.type.TypeHandler` 接口， 或继承一个很便利的类 `org.apache.ibatis.type.BaseTypeHandler`， 然后可以选择性地将它映射到一个JDBC类型。
 
@@ -1522,9 +1776,9 @@ MyBatis的传入参数parameterType类型分两种
    [User{id=7, username='zhangsan', password='123', birthday=Sat Jul 11 16:17:32 CST 2020}]
    ```
 
-## 6.2 plugins标签
+## 6.2 plugins标签（插件）
 
-MyBatis可以使用第三方的插件来对功能进行扩展，分页助手PageHelper是将分页的复杂操作进行封装，使用简单的方式即可获得分页的相关数据
+MyBatis可以使用第三方的插件来对功能进行扩展，例如：**分页助手PageHelper**是将分页的复杂操作进行封装，使用简单的方式即可获得分页的相关数据
 
 开发步骤：
 
@@ -1566,6 +1820,7 @@ MyBatis可以使用第三方的插件来对功能进行扩展，分页助手Page
        SqlSessionFactory build = new SqlSessionFactoryBuilder().build(resourceAsStream);
        SqlSession sqlSession = build.openSession();
        userMapper mapper = sqlSession.getMapper(userMapper.class);
+       
        // 设置分页相关参数：当前页，每页显示条数
        PageHelper.startPage(1,3);
    
@@ -1619,7 +1874,47 @@ MyBatis可以使用第三方的插件来对功能进行扩展，分页助手Page
    }
    ```
 
-## 6.3 小结
+## 6.3 mappers标签（映射器）
+
+我们需要告诉 MyBatis 到哪里去找到这些语句。 在自动查找资源方面，Java 并没有提供一个很好的解决方案，所以最好的办法是直接告诉 MyBatis 到哪里去找映射文件。 你可以使用相对于类路径的资源引用，或完全限定资源定位符（包括 `file:///` 形式的 URL），或类名和包名等。例如：
+
+**注：有关mapper的细节问题，查询11.4部分**
+
+```xml
+<!-- 使用相对于类路径的资源引用 -->
+<mappers>
+  <mapper resource="org/mybatis/builder/AuthorMapper.xml"/>
+  <mapper resource="org/mybatis/builder/BlogMapper.xml"/>
+  <mapper resource="org/mybatis/builder/PostMapper.xml"/>
+</mappers>
+```
+
+```xml
+<!-- 使用完全限定资源定位符（URL） -->
+<mappers>
+  <mapper url="file:///var/mappers/AuthorMapper.xml"/>
+  <mapper url="file:///var/mappers/BlogMapper.xml"/>
+  <mapper url="file:///var/mappers/PostMapper.xml"/>
+</mappers>
+```
+
+```xml
+<!-- 使用映射器接口实现类的完全限定类名 -->
+<mappers>
+  <mapper class="org.mybatis.builder.AuthorMapper"/>
+  <mapper class="org.mybatis.builder.BlogMapper"/>
+  <mapper class="org.mybatis.builder.PostMapper"/>
+</mappers>
+```
+
+```xml
+<!-- 将包内的映射器接口实现全部注册为映射器 -->
+<mappers>
+  <package name="org.mybatis.builder"/>
+</mappers>
+```
+
+## 6.4 小结
 
 常用标签：
 
@@ -1644,9 +1939,9 @@ MyBatis可以使用第三方的插件来对功能进行扩展，分页助手Page
 1. 创建orders表和user表
 
    ```sql
-   create table user2 (id int primary key auto_increment,username varchar(255),password varchar(255),birthday date)
+   create table user (id int primary key auto_increment,username varchar(255),password varchar(255),birthday date)
    
-   create table orders2 (id int primary key auto_increment,orderTime date , total double, uid int)
+   create table orders (id int primary key auto_increment,orderTime date , total double, uid int)
    ```
 
 2. 创建实体类
@@ -1749,14 +2044,15 @@ MyBatis可以使用第三方的插件来对功能进行扩展，分页助手Page
              <result column="total" property="total"></result>
              
              <!--
+     		  关联（association）元素处理“有一个”类型的关系
                javaType： 当前实体（order）中的属性类型
                property：当前实体（order）中属性名称（private User SetUser-》user）
             -->
              <association property="user" javaType="user">
                  <id column="uid" property="id"></id>
-                 <id column="username" property="username"></id>
-                 <id column="password" property="password"></id>
-                 <id column="birthday" property="birthday"></id>
+                 <result column="username" property="username"></result>
+                 <result column="password" property="password"></result>
+                 <result column="birthday" property="birthday"></result>
              </association>
      
          </resultMap>
@@ -1766,8 +2062,10 @@ MyBatis可以使用第三方的插件来对功能进行扩展，分页助手Page
          </select>
      </mapper>
      ```
-
+   ```
      
+     
+   ```
 
 6. 创建MyBatis核心配置文件
 
@@ -1908,10 +2206,12 @@ MyBatis可以使用第三方的插件来对功能进行扩展，分页助手Page
            <result column="birthday" property="birthday"></result>
    
            <!--
+   			collection：处理“有很多个”类型的关联
                property：集合名称
                ofType：当前集合中的数据类型
+   			在一般情况下，MyBatis 可以推断 javaType 属性，因此这里可以去掉javaType属性
            -->
-           <collection property="orderList" ofType="order">
+           <collection property="orderList" javaType="list"  ofType="order">
                <id column="oid" property="id"></id>
                <result column="orderTime" property="orderTime"></result>
                <result column="total" property="total"></result>
@@ -2204,19 +2504,21 @@ MyBatis可以使用第三方的插件来对功能进行扩展，分页助手Page
 
    结果
 
-   ```
-   User{id=1, username='zhangsan', password='123', birthday=null, orderList=null, roleList=[Role{id=1, roleName='院长', roleDesc='负责全面工作'}, Role{id=2, roleName='研究员', roleDesc='课程研发工作'}]}
+   ```json
+   [
+   User{id=1, username='zhangsan', password='123', birthday=null, orderList=null, roleList=[Role{id=1, roleName='院长', roleDesc='负责全面工作'}, Role{id=2, roleName='研究员', roleDesc='课程研发工作'}]}, 
    
    User{id=5, username='admin', password='123', birthday=null, orderList=null, roleList=[Role{id=3, roleName='讲师', roleDesc='授课工作'}, Role{id=4, roleName='助教', roleDesc='协助解决学生的问题'}, Role{id=5, roleName='班主任', roleDesc='解决学生生活'}]}
+   ]
    ```
 
 ## 7.4 总结
 
 MyBatis多表配置方式：
 
-一对一配置：使用`<resultMap>`做配置
-一对多配置：使用`<resultMap>+<collection>`做配置
-多对多配置：使用`<resultMap>+<collection>`做配置
+一对一配置：使用`<resultMap> + <association>`做配置
+一对多配置：使用`<resultMap> + <collection>`做配置
+多对多配置：使用`<resultMap> + <collection>`做配置
 
 
 
@@ -2588,10 +2890,10 @@ MyBatis多表配置方式：
                @Result(column = "total",property = "total"),
                @Result(
                        property = "user", // 要封装的属性名称
-                       column = "uid",// 根据哪个字段去查询user表的数据
+                       column = "uid",// 根据哪个字段去查询user表的数据，也可以理解为查询语句需要的条件
                        javaType = User.class,// 要封装的实体类型
    
-                       // select属性 代表查询哪个接口的方法获得数据
+                       // select属性 代表查询哪个接口的方法获得数据，是全限定类名
                        one = @One(select = "itcast.dao.userDao.findUserById")
                )
        })
@@ -3183,6 +3485,8 @@ public class User {
 
 如上，就要查询单个用户以及用户的角色信息。不过在这里，我们不能用`resultType=User`来返回。
 
+这里的案例是一对一查询：假设一个user只允许一个角色
+
 毕竟，`User`类中只有一个`Role`对象，并没有`role_id和role_name`字段属性。
 
 所以，我们要使用`association`来关联它们。
@@ -3462,6 +3766,8 @@ public class User {
 
 1. setmealDao.xml映射文件
 
+   不要纠结于为什么映射文件这么长，这是一个项目部分内容，为了方便示例直接拿下来的
+
    ```xml
    <!--根据套餐ID查询套餐详情（包含套餐基本信息、检查组信息、检查项信息）-->
    <!--
@@ -3469,7 +3775,7 @@ public class User {
            ofType：属性类型
            select：执行的sql语句，可以直接写sql，但是不建议，直接指定mapper映射文件类名及id名即可，无需接口中实现
            column：指定列
-       -->
+   -->
    <resultMap id="findSetmeal" type="com.itcast.pojo.Setmeal">
        <id column="id" property="id"></id>
        <result column="name" property="name"></result>
@@ -3494,6 +3800,36 @@ public class User {
        select * from t_setmeal where id = #{id}
    </select>
    
+   
+   <!--com.itcast.dao.CheckGroupDao.findCheckgroupById-->
+   <!--    多对多查询-->
+   <resultMap id="findCheckgroup" type="com.itcast.pojo.CheckGroup">
+       <id column="id" property="id"></id>
+       <result property="code" column="code"></result>
+       <result property="name" column="name"></result>
+       <result property="helpCode" column="helpCode"></result>
+       <result property="sex" column="sex"></result>
+       <result property="remark" column="remark"></result>
+       <result property="attention" column="attention"></result>
+   </resultMap>
+   <resultMap id="findCheckgroupById" type="com.itcast.pojo.CheckGroup" extends="findCheckgroup">
+       <collection property="checkItems"
+                   ofType="com.itcast.pojo.CheckItem"
+                   select="com.itcast.dao.CheckItemDao.findCheckItemById"
+                   column="id" >
+       </collection>
+   </resultMap>
+   <select id="findCheckgroupById" parameterType="int" resultMap="findCheckgroupById">
+       select * from t_checkgroup where id in( select checkgroup_id from t_setmeal_checkgroup where setmeal_id = #{setmeal_id})
+   </select>
+   
+   
+   
+   <!--com.itcast.dao.CheckItemDao.findCheckItemById-->
+   <!--根据检查组ID查询关联的检查项-->
+   <select id="findCheckItemById" parameterType="int" resultType="com.itcast.pojo.CheckItem">
+       select * from t_checkitem where id in (select checkitem_id from t_checkgroup_checkitem where checkgroup_id=#{id})
+   </select>
    ```
 
 2. CheckGroupDao.xml
@@ -3840,3 +4176,240 @@ MyBatis 还支持将查询的数据封装成`Map`。
    可以看到，已经明确查询到了对应的数据
 
 总结：在使用mybatis操作数据库中的date字段时，切记加入`jdbcType=DATE`此标记，并且在务必保持一条原则，**使用date类型通过mybatis操作数据库的date类型**
+
+## 11.3 mybatis的时区问题
+
+问题：使用mybatis读取mysql数据库里的timestamp字段时，发现读取所得时间比数据库原始数据多了几小时。
+
+- 解决办法1
+
+  原因是数据库使用了非中国时区，所以去数据库里设置一下时区即可，因为mybatis会读取数据库市区来转换时间戳
+
+  ```sql
+  set global time_zone = '+8:00';
+  set time_zone = '+8:00';
+  flush privileges;
+  ```
+
+- 解决办法2
+
+  改写jdbc连接字符串：
+
+  - 开启时区转换，将useTimezone设置为true
+  - 设置时区，指定time_zone
+
+  ```properties
+  jdbc.url=jdbc:mysql://localhost:3306/sys?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
+  
+  ```
+
+  
+
+## 11.4 mybatis核心配置文件中mapper扫描问题
+
+MyBatis中通过Mapper接口加载映射文件需要满足以下规范：
+
+1. 使用mapper代理方法，这是前提 
+2. mapper接口类名与mapper.xml文件名一致且在同一文件夹（目录）中
+3. 使用了注解方式就不要再使用映射文件方式，**二者取其一**
+
+注意：
+
+- **使用resource方式的映射文件可以任意取名而且放置的位置也可以不放在同一个包下**！
+- **而package、class方式必须满足以下两点**，否则，将报`BindingException`异常
+  - 接口与映射文件一定要同名
+  - 接口与映射文件一定要放在同一个包下，同包也可以是在resources资源目录下，只需要保证接口全限定类名以及映射文件全限定类名保持一致
+
+![](img/mybatis/mapper.png)
+
+
+
+细节问题
+
+1. 使用mapper标签加载映射文件或者mapper接口时，**不要映射文件和注解配置方式一起使用，很乱不说，还难以维护**
+
+   解决方法：
+
+   - 要么只使用注解方式，要么只使用mapper映射文件方式。
+- 在仅使用mapper映射文件的方式时，**必须要保持映射文件和对应接口包相同路径及名字，具体见上图**
+   
+2. **如果接口中存在相同的方法名（即使方法签名不同）**，那么mybatis将抛出`Mapped Statements collection already contains value`错误消息。
+
+
+
+
+
+
+
+**测试细节问题1：**
+
+- 注意：一个配置了注解，一个没有配置注解
+
+  ```java
+  @Select("select * from user")
+  List<User> findAll();
+  
+  void findById(int id);
+  ```
+
+- 映射文件
+
+  注意：只配置了没有使用注解的接口映射。
+
+  ```xml
+  <select id="findById" parameterType="int" resultType="user">
+      select * from user where id = #{id}
+  </select>
+  ```
+
+- 核心配置文件（部分内容，只截取mapper部分）
+
+  ```xml
+  <!--加载映射文件，注：因为在resources资源目录下创建了多个文件夹，所以需要使用如下结构，如果该配置文件位于resources目录的根目录下则直接写文件名即可-->
+  <mappers>
+      <!-- 使用相对于类路径的资源引用 -->
+      <mapper resource="com/itcast/mapper/Usermapper.xml"></mapper>
+  </mappers>
+  ```
+
+- 测试
+
+  测试无注解方法
+
+  ```java
+  @Test
+      public void test8() throws IOException {
+          InputStream resourceAsStream = Resources.getResourceAsStream("com/itcast/sqlMapConfig.xml");
+          SqlSessionFactory build = new SqlSessionFactoryBuilder().build(resourceAsStream);
+          SqlSession sqlSession = build.openSession(true);
+          UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+          // 调用方法
+          User user = mapper.findById(3);
+          
+          System.out.println(user);
+  		// 成功输出：User{id=3, username='zhangsan2', password='12342', birthday=null, orderList=null, roleList=null}
+  
+          sqlSession.close();
+  
+      }
+  ```
+
+  测试注解方法
+
+  ```java
+  @Test
+      public void test7() throws IOException {
+          InputStream resourceAsStream = Resources.getResourceAsStream("com/itcast/sqlMapConfig.xml");
+          SqlSessionFactory build = new SqlSessionFactoryBuilder().build(resourceAsStream);
+          SqlSession sqlSession = build.openSession(true);
+          UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+          // 调用方法
+          List<User> userList = mapper.findAll();
+          System.out.println(userList);
+  		// 成功输出内容：[User{id=1, username='zhangsan', password='1234', birthday=null, orderList=null, roleList=null}, User{id=2, username='zhangsan1', password='12341', birthday=null, orderList=null, roleList=null}]  内容太多，删了一些
+          sqlSession.close();
+  
+      }
+  ```
+
+
+
+测试细节问题2：
+
+**映射文件方式我想应该不会有人配置id一样的时候，所以，主要看最下面的使用接口方式**
+
+采用mapper映射文件方式
+
+- 接口
+
+  ```java
+  User findById(int id);
+  List<User> findById();
+  ```
+
+- 映射文件
+
+  ```xml
+  <select id="findById" parameterType="int" resultType="user">
+      select * from user where id = #{id}
+  </select>
+  <select id="findById" resultType="user">
+      select * from user
+  </select>
+  ```
+
+- 测试
+
+  ```java
+  @Test
+  public void test8() throws IOException {
+      InputStream resourceAsStream = Resources.getResourceAsStream("com/itcast/sqlMapConfig.xml");
+      SqlSessionFactory build = new SqlSessionFactoryBuilder().build(resourceAsStream);
+      SqlSession sqlSession = build.openSession(true);
+      UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+      // 调用方法
+      User user = mapper.findById(3);
+      System.out.println(user);
+  
+      sqlSession.close();
+  }
+  ```
+
+- 报错
+
+  ```
+  Cause: org.apache.ibatis.builder.BuilderException: Error parsing SQL Mapper Configuration. Cause: org.apache.ibatis.builder.BuilderException: Error parsing Mapper XML. The XML location is 'com/itcast/mapper/Usermapper.xml'. Cause: java.lang.IllegalArgumentException: Mapped Statements collection already contains value for com.itcast.mapper.UserMapper.findById
+  
+  原因：org.apache.ibatis.builder.BuilderException：解析SQL Mapper配置时出错。 原因：org.apache.ibatis.builder.BuilderException：解析Mapper XML时出错。 XML位置为“ com / itcast / mapper / Usermapper.xml”。 原因：java.lang.IllegalArgumentException：映射的语句集合已经包含com.itcast.mapper.UserMapper.findById的值
+  ```
+
+**采用mapper接口实现方式**
+
+- 接口
+
+  ```java
+  @Select("select * from user where id = #{id}")
+  User findById(int id);
+  
+  @Select("select * from user")
+  List<User> findById();
+  ```
+
+- 核心配置文件
+
+  **注意：要么保持resources资源目录和类路径不一致，要么不需要配置映射文件**
+
+  ```xml
+  <!--加载映射文件，注：因为在resources资源目录下创建了多个文件夹，所以需要使用如下结构，如果该配置文件位于resources目录的根目录下则直接写文件名即可-->
+  <mappers>
+      <!-- 使用映射器接口实现类的完全限定类名 -->
+      <mapper class="com.itcast.mapper.UserMapper"/>
+  </mappers>
+  ```
+
+- 测试
+
+  ```java
+  @Test
+  public void test8() throws IOException {
+      InputStream resourceAsStream = Resources.getResourceAsStream("com/itcast/sqlMapConfig.xml");
+      SqlSessionFactory build = new SqlSessionFactoryBuilder().build(resourceAsStream);
+      SqlSession sqlSession = build.openSession(true);
+      UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+      // 调用方法
+      User user = mapper.findById(3);
+      System.out.println(user);
+  
+      sqlSession.close();
+  }
+  ```
+
+- 报错
+
+  ```
+  Cause: org.apache.ibatis.builder.BuilderException: Error parsing SQL Mapper Configuration. Cause: java.lang.IllegalArgumentException: Mapped Statements collection already contains value for com.itcast.mapper.UserMapper.findById
+  
+  原因：org.apache.ibatis.builder.BuilderException：解析SQL Mapper配置时出错。 原因：java.lang.IllegalArgumentException：映射的语句集合已经包含com.itcast.mapper.UserMapper.findById的值
+  ```
+
+  

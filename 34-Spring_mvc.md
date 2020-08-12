@@ -5,7 +5,7 @@
 ## 1.1 三层架构
 
 我们的开发架构一般都是基于两种形式，一种是 C/S 架构，也就是客户端/服务器，另一种是 B/S 架构，也就
-是浏览器服务器。在 JavaEE 开发中，几乎全都是基于 B/S 架构的开发。那么在 B/S 架构中，系统标准的三层架构
+是浏览器/服务器。在 JavaEE 开发中，几乎全都是基于 B/S 架构的开发。那么在 B/S 架构中，系统标准的三层架构
 包括：表现层、业务层、持久层。三层架构在我们的实际开发中使用的非常多，三层架构中，每一层各司其职，接下来我们就说说每层都负责哪些方面。
 
 **表现层：**
@@ -154,6 +154,7 @@ RESTful 编程风格的请求
        <groupId>javax.servlet</groupId>
        <artifactId>javax.servlet-api</artifactId>
        <version>3.1.0</version>
+       <scope>provided</scope>
    </dependency>
    <dependency>
        <groupId>javax.servlet.jsp</groupId>
@@ -276,9 +277,9 @@ RESTful 编程风格的请求
 
 根据以上内容，得出如下问题
 
-1. 服务器接收到客户端请求时每次都要创建ApplicationContext对象，读取application.xml配置文件，那么，当请求有很多个时，会不会造成资源浪费呢？会
-2. 直接通过名称读取application.xml配置文件是不是不太好，万一以后需要修改呢？
-3. 程序中应当尽量避免出现具体的名字，如：`ApplicationContext app = (ApplicationContext) servletContext.getAttribute("app")`中的app，避免名字与其他程序出现重复等问题
+1. **服务器接收到客户端请求时每次都要创建ApplicationContext对象，读取application.xml配置文件**，那么，当请求有很多个时，会不会造成资源浪费呢？会
+2. 直接**通过名称读取application.xml配置文件是不是不太好**，万一以后需要修改呢？
+3. 程序中应当尽量避免出现具体的名字，如：`ApplicationContext app = (ApplicationContext) servletContext.getAttribute("app")`中的app，**避免名字与其他程序出现重复**等问题
 
 解决方法：
 
@@ -386,6 +387,16 @@ RESTful 编程风格的请求
 1. 在web.xml中配置ContextLoaderListener监听器（导入spring-web坐标）
 2. 使用WebApplicationContextUtils获得应用上下文对象ApplicationContext
 
+关于`<context-param> `标签的说明：
+
+- 作用：该元素用来声明应用范围（整个WEB项目）内的上下文初始化参数。
+- `param-name` 设定上下文的参数名称。必须是唯一名称
+- `param-value `设定的参数名称的值
+
+注意：web.xml 的加载顺序：
+
+`context-param -> listener -> filter -> servlet`，而同个类型之间的实际程序调用的时候的顺序是根据对应的 mapping的顺序进行调用的。
+
 实现步骤：
 
 1. 导入Spring集成web的坐标
@@ -443,10 +454,40 @@ RESTful 编程风格的请求
    http://localhost:8080/spring_mvc_war_exploded/userServlet?a=1
    ```
    
-5. 知识要点
+5. 分析打印日志
+
+   ```
+   [INFO] Root WebApplicationContext: initialization started
+   [INFO] Refreshing Root WebApplicationContext: startup date [Sat Aug 08 16:25:33 CST 2020]; root of context hierarchy
+   [INFO] Loading XML bean definitions from class path resource [applicationContext.xml]
+   [INFO] Root WebApplicationContext: initialization completed in 242 ms
+   ```
+   
+   ```
+   [INFO]根WebApplicationContext：开始初始化
+   [INFO]刷新根WebApplicationContext：启动日期[Sat Aug 08 16:25:33 CST 2020]； 上下文层次结构的根
+   [INFO]从类路径资源[applicationContext.xml]加载XML bean定义
+   [INFO]根WebApplicationContext：初始化在242毫秒内完成
+   ```
+   
+   分析
+   
+   1. 启动一个WEB项目的时候，容器(如:Tomcat)会去读它的配置文件web.xml。读两个节点：` <context-param></context-param>`和 `<listener></listener> `。
+   2. 接着容器会创建一个ServletContext(上下文)，整个WEB项目共享这个上下文。
+   3. 接着容器会将读取到`<context-param>`转化为**键值对**，并交给ServletContext。
+   4. 容器创建`<listener></listener>`中的类实例，即创建监听（备注：listener定义的类可以是自定义的类但必须需要实现ServletContextListener）。在spring_mvc快速入门案例中，spring提供的ContextLoaderListener类已经帮我们实现了ServletContextListener接口，并实现了相关的方法
+   5. 在监听的类中会有一个`contextInitialized(ServletContextEvent event)`初始化方法，在这个方法中可以通过`event.getServletContext().getInitParameter("param-name设置的值")`来得到`context-param`设定的值。在这个类中还必须有一个`contextDestroyed(ServletContextEvent event)`销毁方法。用于关闭应用前释放资源，比如说数据库连接的关闭。
+   6. 得到这个`context-param`的值之后，你就可以做一些操作了。注意，这个时候你的WEB项目还没有完全启动完成。这个动作会比所有的Servlet都要早。换句话说,这个时候,你对`<context-param>`中的键值做的操作，将在你的WEB项目完全启动之前被执行。
+   
+6. 知识要点
 
    - 配置ContextLoaderListener监听器
    - 使用WebApplicationContextUtils获取应用上下文对象
+
+tomcat加载配置文件过程分析
+
+> 启动项目的时候，读取web.xml配置文件，并创建servletContext域对象，整个项目共享此对象，将读取到的<context-param>标签内容转化为键值对，存储在域对象中，接着容器创建<listener>标签中的类实例，在这个类实例当中会帮助我们加载spring配置文件applicationContext.xml，创建ApplicationContext对象，并通过setAttribute()方法，将这个对象存储在servletContext域对象中，而我们如过需要使用此对象，
+> 则需要通过工具类（WebApplicationContextUtils）中的getWebApplicationContext方法，并传入一个servletContext域对象，获取到存储在servletContext域对象中的ApplicationContext对象，其原理是通过getAttribute()方法获取得到存储其中的对象
 
 ## 2.3 SpringMVC快速入门
 
@@ -585,52 +626,235 @@ springMVC执行流程
 
 ![](img/spring/spring执行流程.png)
 
-DispatcherServlet，分发器，前端控制器，实质也是一个HttpServlet。DispatcherServlet 负责将请求分发，所有的请求都有经过它来统一分发。
+1. 首先用户发送请求http://localhost:80/save至web容器，web容器根据`/save`路径映射到DispatcherServlet（url-pattern为/）进行处理；
 
-- 用户发送请求至前端控制器DispatcherServlet。
+2. DispatcherServlet收到请求并调用HandlerMapping完成请求到处理的映射，将`/save`路径直接映射到名字为`/save`的Bean进行处理
 
-- DispatcherServlet收到请求调用HandlerMapping处理器映射器。
+3. 处理器映射器找到具体的处理器(可以根据xml配置、注解进行查找)，生成处理器对象及处理器拦截器(如果有则生成)一并返回给DispatcherServlet。
 
-- 处理器映射器找到具体的处理器(可以根据xml配置、注解进行查找)，生成处理器对象及处理器拦截器(如果有则生成)一并返回给DispatcherServlet。
+4. DispatcherServlet调用HandlerAdapter处理器适配器。
 
-- DispatcherServlet调用HandlerAdapter处理器适配器。
+   HandlerAdapter经过适配调用具体的处理器(Controller，也叫后端控制器)。
 
-- HandlerAdapter经过适配调用具体的处理器(Controller，也叫后端控制器)。
+   在填充Handler的入参过程中，根据你的配置，Spring将帮你做一些额外的工作：
 
-  在填充Handler的入参过程中，根据你的配置，Spring将帮你做一些额外的工作：
+   - HttpMessageConveter： 将请求消息（如Json、xml等数据）转换成一个对象，将对象转换为指定的响应信息
+   - 数据转换：对请求消息进行数据转换。如String转换成Integer、Double等
+   - 数据格式化：对请求消息进行数据格式化。 如将字符串转换成格式化数字或格式化日期等
+   - 数据验证： 验证数据的有效性（长度、格式等），验证结果存储到BindingResult或Error中
 
-  - HttpMessageConveter： 将请求消息（如Json、xml等数据）转换成一个对象，将对象转换为指定的响应信息
-  - 数据转换：对请求消息进行数据转换。如String转换成Integer、Double等
-  - 数据格式化：对请求消息进行数据格式化。 如将字符串转换成格式化数字或格式化日期等
-  - 数据验证： 验证数据的有效性（长度、格式等），验证结果存储到BindingResult或Error中
+5. Controller执行完成返回ModelAndView。
 
-- Controller执行完成返回ModelAndView。
+6. HandlerAdapter将controller执行结果ModelAndView返回给DispatcherServlet。
 
-- HandlerAdapter将controller执行结果ModelAndView返回给DispatcherServlet。
+7. DispatcherServlet将ModelAndView传给ViewReslover视图解析器。
 
-- DispatcherServlet将ModelAndView传给ViewReslover视图解析器。
+8. ViewReslover解析后返回具体View，DispatcherServlet根据View进行渲染视图（即将模型数据填充至视图中）
 
-- ViewReslover解析后返回具体View。
+9. DispatcherServlet响应用户消息。
 
-- DispatcherServlet根据View进行渲染视图（即将模型数据填充至视图中）。DispatcherServlet响应用户。
+   - HttpMessageConveter： 将请求消息（如Json、xml等数据）转换成一个对象，将对象转换为指定的响应信息
+   - 数据转换：对请求消息进行数据转换。如String转换成Integer、Double等
+   - 数据格式化：对请求消息进行数据格式化。 如将字符串转换成格式化数字或格式化日期等
+   - 数据验证： 验证数据的有效性（长度、格式等），验证结果存储到BindingResult或Error中
+
+**简述：**
+
+> 用户发送请求至服务器，web容器拦截到此请求（url-pattern为/），并将请求映射到对应的controller中进行处理 （在将请求映射到controller中会将会帮你做一些额外工作，见上面第四步），Controller执行完成返回ModelAndView对象给DispatcherServlet，DispatcherServlet将ModelAndView传给ViewReslover视图解析器进行解析，解析完成后返回具体的视图，DispatcherServlet根据View（视图）进行渲染，最后将渲染结果返回给客户端
+
+其中，我们主要进行了如下配置：
+
+1.  前端控制器DispatcherServlet；
+2. HandlerMapping（处理器映射器）
+3.  HandlerAdapter（处理器适配器）
+4. ViewResolver（视图解析）
+5.  处理器/页面控制器
+6. 视图
+
+## 2.5 DispatcherServlet详解
+
+### 2.5.1 概念
+
+DispatcherServlet是前置控制器，配置在web.xml文件中的。拦截匹配的请求，Servlet拦截匹配规则要自己定义，把拦截下来的请求，依据相应的规则分发到目标Controller来处理，是配置spring MVC的第一步。
+
+DispatcherServlet是前端控制器设计模式的实现，提供Spring Web MVC的集中访问点，而且负责职责的分派，而且与Spring IoC容器无缝集成，从而可以获得Spring的所有好处。
+
+**主要职责：**DispatcherServlet主要用作职责调度工作，本身**主要用于控制流程**，主要职责如下：
+
+1. 文件上传解析，如果请求类型是multipart将通过MultipartResolver进行文件上传解析；
+2. 通过HandlerMapping，将请求映射到处理器（返回一个HandlerExecutionChain，它包括一个处理器、多个HandlerInterceptor拦截器）；
+3. 通过HandlerAdapter支持多种类型的处理器(HandlerExecutionChain中的处理器)；
+4. 通过ViewResolver解析逻辑视图名到具体视图实现
+5. 本地化解析；
+6. 渲染具体的视图等；
+7. 如果执行过程中遇到异常将交给HandlerExceptionResolver来解析。
+
+从以上我们可以看出DispatcherServlet**主要负责流程的控制**（而且在流程中的每个关键点都是很容易扩展的）
+
+### 2.5.2 DispatcherServlet在web.xml中的配置
+
+```xml
+<!--  配置springMVC核心控制器-->
+<servlet>
+    <servlet-name>DispatcherServlet</servlet-name>
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+    <!--DispatcherServlet也可以配置自己的初始化参数-->
+    <init-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>classpath:spring-mvc.xml</param-value>
+    </init-param>
+    <!--表示启动容器时初始化该Servlet-->
+    <load-on-startup>1</load-on-startup>
+</servlet>
+
+<servlet-mapping>
+    <servlet-name>DispatcherServlet</servlet-name>
+     <!--
+		url-pattern：表示哪些请求交给SpringMVC处理， 
+        “/” 是用来定义默认servlet映射的。
+        也可以如“*.html”表示拦截所有以html为扩展名的请求。
+    -->
+    <url-pattern>/</url-pattern>
+</servlet-mapping>
+```
+
+注：该DispatcherServlet默认使用WebApplicationContext作为上下文，Spring默认配置文件为`/WEB-INF/[servlet名字]-servlet.xml`，DispatcherServlet也可以配置自己的初始化参数，覆盖默认配置：
+
+| **参数**              | **描述**                                                     |
+| --------------------- | ------------------------------------------------------------ |
+| contextClass          | 实现WebApplicationContext接口的类，当前的servlet用它来创建上下文。如果这个参数没有指定， 默认使用XmlWebApplicationContext。 |
+| contextConfigLocation | 传给上下文实例（由contextClass指定）的字符串，用来指定上下文的位置。这个字符串可以被分成多个字符串（使用逗号作为分隔符） 来支持多个上下文（在多上下文的情况下，如果同一个bean被定义两次，后面一个优先）。 |
+| namespace             | WebApplicationContext命名空间。默认值是[server-name]-servlet。 |
+
+因此我们可以通过添加初始化参数
+
+```xml
+<init-param>
+    <param-name>contextConfigLocation</param-name>
+    <param-value>classpath:spring-mvc.xml</param-value>
+</init-param>
+```
+
+如果使用如上配置，SpringMVC框架将加载`classpath:spring-mvc.xml`来进行初始化上下文而不是`/WEB-INF/[servlet名字]-servlet.xml`。
+
+### 2.5.3 上下文关系
+
+集成Web环境通用配置
+
+```xml
+<!--全局初始化参数-->
+<context-param>
+    <param-name>contextConfigLocation</param-name>
+    <param-value>classpath:applicationContext.xml</param-value>
+</context-param>
+<!--配置监听器-->
+<listener>
+    <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+</listener>
+
+<!--  配置springMVC核心控制器-->
+<servlet>
+    <servlet-name>DispatcherServlet</servlet-name>
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+    <init-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>classpath:spring-mvc.xml</param-value>
+    </init-param>
+    <load-on-startup>1</load-on-startup>
+</servlet>
+<servlet-mapping>
+    <servlet-name>DispatcherServlet</servlet-name>
+    <url-pattern>/</url-pattern>
+</servlet-mapping>
+```
+
+**ContextLoaderListener初始化的上下文和DispatcherServlet初始化的上下文关系**
 
 
 
-- HttpMessageConveter： 将请求消息（如Json、xml等数据）转换成一个对象，将对象转换为指定的响应信息
-- 数据转换：对请求消息进行数据转换。如String转换成Integer、Double等
-- 数据格式化：对请求消息进行数据格式化。 如将字符串转换成格式化数字或格式化日期等
-- 数据验证： 验证数据的有效性（长度、格式等），验证结果存储到BindingResult或Error中
+从下图中可以看出：
 
-Handler执行完成后，向DispatcherServlet 返回一个ModelAndView对象；根据返回的ModelAndView，选择一个适合的ViewResolver返回给DispatcherServlet；ViewResolver 结合Model和View，来渲染视图，最后将渲染结果返回给客户端。
+**ContextLoaderListener初始化的上下文加载的Bean是对于整个应用程序共享的**，不管是使用什么表现层技术，一般如DAO层、Service层Bean；
 
-## 2.5 SpringMVC相关解析
+**DispatcherServlet初始化的上下文加载的Bean是只对SpringMVC有效的Bean**，如Controller、HandlerMapping、HandlerAdapter等等，该初始化上下文应该只加载Web相关组件。
+
+![](img/spring/DispatcherServlet上下文关系.jpg)
+
+### 2.5.4 DispatcherServlet初始化顺序
+
+继承体系结构如下所示：
+
+![](img/spring/DispatcherServlet初始化顺序.jpg)
+
+1. HttpServletBean继承HttpServlet，因此在Web容器启动时将调用它的init方法，该初始化方法的主要作用：
+
+   - 将Servlet初始化参数（init-param）设置到该组件上（如contextAttribute、contextClass、namespace、contextConfigLocation），通过BeanWrapper简化设值过程，方便后续使用；
+   - 提供给子类初始化扩展点，initServletBean()，该方法由FrameworkServlet覆盖。
+
+2. FrameworkServlet继承HttpServletBean，通过initServletBean()进行Web上下文初始化，该方法主要覆盖一下两件事情：
+
+   -   初始化web上下文；
+
+   -   提供给子类初始化扩展点；
+
+3. DispatcherServlet继承FrameworkServlet，并实现了onRefresh()方法提供一些前端控制器相关的配置
+
+**DispatcherServlet初始化主要做了如下两件事情：**
+
+- 初始化SpringMVC使用的Web上下文，并且可能指定父容器为（ContextLoaderListener加载了根上下文）
+- 初始化DispatcherServlet使用的策略，如HandlerMapping、HandlerAdapter等。
+
+
+
+### 2.5.5 DispatcherServlet中使用的特殊的Bean
+
+DispatcherServlet默认使用WebApplicationContext作为上下文，该上下文中特殊的Bean有：
+
+1. Controller：
+
+   处理器/页面控制器，做的是MVC中的C的事情，但控制逻辑转移到前端控制器了，用于对请求进行处理
+
+2. HandlerMapping：
+
+   请求到处理器的映射，如果映射成功返回一个HandlerExecutionChain对象（包含一个Handler处理器（页面控制器）对象、多个HandlerInterceptor拦截器）对象；
+
+   如BeanNameUrlHandlerMapping将URL与Bean名字映射，映射成功的Bean就是此处的处理器；
+
+3. HandlerAdapter：
+
+   HandlerAdapter将会把处理器包装为适配器，从而支持多种类型的处理器，即适配器设计模式的应用，从而很容易支持很多类型的处理器；如SimpleControllerHandlerAdapter将对实现了Controller接口的Bean进行适配，并且按处理器的handleRequest方法进行功能处理；
+
+4. ViewResolver：
+
+   ViewResolver将把逻辑视图名解析为具体的View，通过这种策略模式，很容易更换其他视图技术；如InternalResourceViewResolver将逻辑视图名映射为jsp视图；
+
+5. LocalResover：
+
+   本地化解析，因为Spring支持国际化，因此LocalResover解析客户端的Locale信息从而方便进行国际化；
+
+6. ThemeResovler：
+
+   主题解析，通过它来实现一个页面多套风格，即常见的类似于软件皮肤效果；
+
+7. MultipartResolver：
+
+   文件上传解析，用于支持文件上传；
+
+8. HandlerExceptionResolver：
+
+   处理器异常解析，可以将异常映射到相应的统一错误界面，从而显示用户友好的界面（而不是给用户看到具体的错误信息）；
+
+9. RequestToViewNameTranslator：
+
+   当处理器没有返回逻辑视图名等相关信息时，自动将请求URL映射为逻辑视图名；
+
+## 2.6 SpringMVC相关解析
 
 **SpringMVC组件解析**
 
-1.  前端控制器：DispatcherServlet
+1. 前端控制器：DispatcherServlet
 
-   用户请求到达前端控制器，它就相当于 MVC 模式中的 C，DispatcherServlet 是整个流程控制的中心，由
-   它调用其它组件处理用户的请求，DispatcherServlet 的存在降低了组件之间的耦合性。
+   用户请求到达前端控制器，它就相当于 MVC 模式中的 C，DispatcherServlet 是整个流程控制的中心， **DispatcherServlet 为来自客户端的请求处理提供通用的方法，而实际的工作交由可自定义配置的组件来执行**。DispatcherServlet 的存在降低了组件之间的耦合性。
 
 2. 处理器映射器：HandlerMapping
 
@@ -714,7 +938,7 @@ Handler执行完成后，向DispatcherServlet 返回一个ModelAndView对象；�
      - `params = {"accountName"}`，表示请求参数必须有accountName
      - `params = {"moeny!100"}`，表示请求参数中money不能是100
      
-     params同样可以用于设置响应编码，可以有效防止响应字符串乱码 
+     params同样可以用于设置响应编码，可以**有效防止响应字符串乱码** 
      
      ```java
       @RequestMapping(value = "/roleList",produces = "text/html;charset=UTF-8")
@@ -785,13 +1009,13 @@ public class userController {
    如果觉得每个项目都要这样去写，很累，可以进行如下配置spring-mvc.xml
 
    ```xml
-    <!--    配置内部资源视图解析器-->
-    <bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
-        <!-- 后缀-->
-        <property name="prefix" value="/jsp/"></property>
-        <!-- 前缀-->
-        <property name="suffix" value=".jsp"></property>
-    </bean>
+   <!--配置内部资源视图解析器-->
+   <bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+       <!-- 后缀-->
+       <property name="prefix" value="/jsp/"></property>
+       <!-- 前缀-->
+       <property name="suffix" value=".jsp"></property>
+   </bean>
    ```
 
    修改控制器
@@ -871,9 +1095,9 @@ SpringMVC的数据响应方式
    ```xml
    <!--    配置内部资源视图解析器-->
    <bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
-       <!-- 后缀-->
-       <property name="prefix" value="/jsp/"></property>
        <!-- 前缀-->
+       <property name="prefix" value="/jsp/"></property>
+       <!-- 后缀-->
        <property name="suffix" value=".jsp"></property>
    </bean>
    ```
@@ -935,6 +1159,24 @@ SpringMVC的数据响应方式
          return view;
      }
      ```
+     
+   - jsp页面
+   
+     ```jsp
+     <%@ page contentType="text/html;charset=UTF-8" language="java" isELIgnored="false" %>
+     <html>
+     <head>
+         <title>Title</title>
+     </head>
+     <body>
+     <h1>欢迎光临，${username}</h1>
+     
+     </body>
+     </html>
+     
+     ```
+   
+     
 
 ### 3.1.2 回写数据
 
@@ -1010,6 +1252,8 @@ SpringMVC的数据响应方式
    3. 实现
 
       ```java
+      // 如果响应内容有汉字的话会乱码，可以使用如下解决方案
+      // @RequestMapping(value = "/quick9",produces = "text/html;charset=UTF-8")
       @RequestMapping("/quick9")
       @ResponseBody
       public String save9() throws JsonProcessingException {
@@ -1027,6 +1271,7 @@ SpringMVC的数据响应方式
 3. 使用SpringMVC的适配器配置消息转换参数，指定使用jackson进行对象或集合的转换
 
    ```xml
+   <!--    配置适配器消息转换参数，指定使用jackson进行对象或集合的转换-->
    <bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">
        <property name="messageConverters">
            <list>
@@ -1039,7 +1284,7 @@ SpringMVC的数据响应方式
    ```java
    @RequestMapping("/quick10")
    @ResponseBody
-   public user save10() throws JsonProcessingException {
+   public user save10(){
        user user = new user();
        user.setAge(12);
        user.setUser("zhangsan");
@@ -1048,34 +1293,81 @@ SpringMVC的数据响应方式
    }
    ```
 
+   注意：当配置了适配器消息转化参数，指定使用jackson进行对象或集合的转换的时候，如果使用此注解`@RequestMapping(value = "/save8",produces = "text/html;charset=UTF-8")`设置了响应格式将会报如下错误
+
+   ```
+   The resource identified by this request is only capable of generating responses with characteristics not acceptable according to the request "accept" headers.
+   该请求标识的资源仅能够生成具有根据请求“接受”标头不可接受的特征的响应。
+   ```
+
+   原因：由于要返回的是json数据，而浏览器接受的是text/html;charset=UTF-8文本类型，所以报错
+
+   解决方法：`<mvc:annotation-driven>`
+
+   
+
 4. 使用`<mvc:annotation-driven>`替代注解处理器和适配器的配置
 
    > 在 SpringMVC 的各个组件中，处理器映射器、处理器适配器、视图解析器称为 SpringMVC 的三大组件。
-   
+
    > 使 用 `<mvc:annotation-driven>` 自动加载 RequestMappingHandlerMapping （处理映射器） 和
    > RequestMappingHandlerAdapter （ 处 理 适 配 器 ） ， 可 用 在 SpringMVC.xml 配 置 文 件 中 使 用
    > `<mvc:annotation-driven>`替代注解处理器和适配器的配置。同时使用`<mvc:annotation-driven>`默认底层就会集成jackson进行对象或集合的json格式字符串的转换。
-   
+
    ```xml
-xmlns:mvc="http://www.springframework.org/schema/mvc"
+   xmlns:mvc="http://www.springframework.org/schema/mvc"
    
    <!--使用mvc的注解驱动，替代内部资源视图解析器-->
    <!--mvc的注解驱动-->
-   <mvc:annotation-driven/>
+   <mvc:annotation-driven></mvc:annotation-driven>
    ```
-   
+
    ```java
    @RequestMapping("/quick10")
    @ResponseBody
-   public user save10() throws JsonProcessingException {
+   public user save10(){
        user user = new user();
-    user.setAge(12);
+       user.setAge(12);
        user.setUser("zhangsan");
    
        return user;
    }
    ```
-   
+
+   注意：使用`<mvc:annotation-driven>`后，经测试发现如下效果
+
+   - 直接返回字符串
+
+     ```java
+     @RequestMapping("/save15")
+     @ResponseBody
+     public String save15(){
+     
+         return "成功";
+     }
+     ```
+
+     访问此地址，页面回显的是乱码
+
+   - 返回pojo对象
+
+     ```java
+     @RequestMapping("/save9")
+     @ResponseBody
+     public User save9() {
+         User user = new User();
+         user.setAge(12);
+         user.setUsername("张三");
+         return user;
+     }
+     ```
+
+     访问此地址，页面回显内容正常` {"username":"张三","age":12}`
+
+   总结如下：使用`@ResponseBody`注解时：
+
+   - 如果返回pojo对象，那么如果在注解`@RequestMapping(value = "/quick9",produces = "text/html;charset=UTF-8")` 配置produces属性，那么将会报错：该请求标识的资源仅能够生成具有根据请求“接受”标头不可接受的特征的响应。
+   - 如果直接返回字符串，那么字符将会乱码，此时可以使用`@RequestMapping(value = "/quick9",produces = "text/html;charset=UTF-8")` 注解中的produces属性，使用后，字符显示正常，且不会报错
 
 ## 3.2 获得请求数据
 
@@ -1110,7 +1402,7 @@ xmlns:mvc="http://www.springframework.org/schema/mvc"
 
   - 第一种：
 
-    要求集合类型的请求参数必须在 POJO 中。在表单中请求参数名称要和 POJO 中集合属性名称相同。
+    **要求集合类型的请求参数必须在 POJO 中**。在表单中请求参数名称要和 POJO 中集合属性名称相同。
 
     给 List 集合中的元素赋值，使用下标。
 
@@ -1188,7 +1480,7 @@ xmlns:mvc="http://www.springframework.org/schema/mvc"
 
 4. 获得集合类型参数
 
-   获得集合参数时，要将集合参数包装到一个POJO中才可以。
+   注意：获得集合参数时，要将集合参数包装到一个POJO中才可以。
 
    ```java
    @RequestMapping("/request4")
@@ -1205,7 +1497,7 @@ xmlns:mvc="http://www.springframework.org/schema/mvc"
    public class userList {
        List<user> userList;
        Map<String,user> userMap;
-	// 省略get与set方法
+		// 省略get与set方法
    	// 省略toString方法
    }
    ```
@@ -1213,7 +1505,7 @@ xmlns:mvc="http://www.springframework.org/schema/mvc"
    ```java
    public class user {
        private String user;
-    private int age;
+    	private int age;
        // 省略get与set方法
 }
    ```
@@ -1251,15 +1543,17 @@ xmlns:mvc="http://www.springframework.org/schema/mvc"
    http://localhost:8080/spring_mvc/form.jsp
    ```
 
-### 3.2.2 @RequestBody注解说明
+### 3.2.2 @RequestBody与@ResponseBody注解说明
 
-作用：@ResponseBody注解的作用是将controller的方法返回的对象（java对象）通过适当的转换器转换为指定的格式（XML，JSON等）之后，写入到response对象的body区（响应给客户端）
+1. @ResponseBody注解一般使用在方法上，但是也可以使用在类上
 
-1. @RequestBody注解使用在方法上时
+   `@Responsebody`注解**在方法上时，表示该方法的返回的结果直接写入 HTTP 响应正文中**，一般在异步获取数据时使用；在使用`@RequestMapping`后，返回值通常解析为跳转路径，加上`@Responsebody`后返回结果不会被解析为跳转路径，而是直接写入HTTP 响应正文中。例如，异步获取`json`数据，加上`@Responsebody`注解后，就会直接返回`json`数据。
+
+   `@Responsebody`注解**在类上时，表示此类下全部方法都不进行页面跳转，此类下所有返回结果直接写入HTTP响应正文当中**
 
    ```java
    @RequestMapping("/login")
-   @ResponseBody
+   @ResponseBody // 此处表示页面不进行跳转，返回json字符串，一般用于异步请求
    public User login(User user){
        return user;
    }
@@ -1275,7 +1569,9 @@ xmlns:mvc="http://www.springframework.org/schema/mvc"
    }
    ```
 
-2. @RequestBody注解使用在方法参数上时
+2. @RequestBody注解一般使用在方法参数上
+
+   `@RequestBody`注解则是将 HTTP 请求正文插入方法中，使用适合的`HttpMessageConverter`将请求体写入某个对象。
 
    如下案例：将客户端传入的JSON数据映射为pojo对象
 
@@ -1308,7 +1604,7 @@ xmlns:mvc="http://www.springframework.org/schema/mvc"
 
    ```java
    @RequestMapping("/request5")
-   @ResponseBody
+   @ResponseBody // 表示页面不进行跳转，返回json字符串，一般用于异步请求
    public void save5(@RequestBody List<user> userList){
    // @RequestBody主要用来接收前端传递给后端的json字符串中的数据的(请求体中的数据的),GET方式无请求体，所以需要用POST方式进行提交
    //一个请求，只有一个RequestBody；一个请求，可以有多个RequestParam。
@@ -2107,6 +2403,35 @@ public void save14(String name, MultipartFile[] upload) throws IOException {
     }
 }
 ```
+
+## 3.7 `<mvc:annotation-driven>`详解
+
+**向容器中注入了如下类：**
+
+- RequestMappingHandlerMapping，处理@RequestMapping注解的
+- BeanNameUrlHandlerMapping，会将controller类的名字映射为请求url
+- **RequestMappingHandlerAdapter，处理@Controller注解的处理器，支持自定义方法参数和返回值（重点）**
+- HttpRequestHandlerAdapter，处理继承HttpRequestHandler的处理器。
+- SimpleControllerHandlerAdapter，处理继承自Controller接口的处理器。
+- ExceptionHandlerExceptionResolver，处理异常的解析器
+- ResponseStatusExceptionResolver，处理异常的解析器
+- DefaultHandlerExceptionResolver，处理异常的解析器
+
+我们知道了它们自动为我们注册了这么多的Bean，那这些Bean是做什么的呢？
+
+主要说明里面的两个，`RequestMappingHandlerMapping和RequestMappingHandlerAdapter`。
+
+- 第一个是HandlerMapping的实现类，它会处理@RequestMapping 注解，并将其注册到请求映射表中。
+- 第二个是HandlerAdapter的实现类，它是处理请求的适配器，说白了，就是确定调用哪个类的哪个方法，并且构造方法参数，返回值。
+
+`<mvc:annotation-driven>`与`<context:component-scan/>`的区别
+
+- 其实`<context:component-scan/>`标签是告诉Spring 来扫描指定包下的类，并注册被@Component，@Controller，@Service，@Repository等注解标记的组件和注册相关的bean
+- `<mvc:annotation-driven>`是告知Spring，我们启用注解驱动，为WEB 应用服务(我们就可以使用该标签注册的几个bean的功能)。然后Spring会自动为我们注册上面说到的几个Bean到工厂中，来处理我们的请求。换句话说，向容器中显式或隐式注册了一系列单个组件，但是项目要想将组件关联起来正常运转，则需要注册的组件完成。
+
+比如请求一个URL，我要知道这个URL匹配哪个controller中的哪个方法。哪个Controller就需要`<context:component-scan/>`注解，如何匹配，匹配哪个方法就需要`<mvc:annotation-driven>`注解。
+
+**如果想使web项目正常运转，一般情况下，`<mvc:annotation-driven>`和`<context:component-scan/>`是必需的！项目中二者相辅相成，缺一不可！！！**
 
 # 4. SpringMVC拦截器
 

@@ -1,4 +1,4 @@
-33-Spring
+# 33-Spring
 
 # 1. Spring 简介
 
@@ -119,6 +119,7 @@
   ```
 
   原因就是：
+  
   我们的类依赖了数据库的具体驱动类（MySQL），如果这时候更换了数据库品牌（比如 Oracle），需要修改源码来重新数据库驱动。这显然不是我们想要的。
 
 ### 2.1.2 解决程序耦合的思路
@@ -351,7 +352,7 @@ spring程序开发步骤
 
 - 用于配置对象交由Spring来创建
 
-- 默认情况下它调用的是类中的无参构造，如果没有无参构造函数，则不能创建成功
+- **默认情况下它调用的是类中的无参构造，如果没有无参构造函数，则不能创建成功，程序报错**
 
 - 基本属性：
 
@@ -406,8 +407,8 @@ spring程序开发步骤
 
   | 取值范围       | 说明                                                         |
   | -------------- | ------------------------------------------------------------ |
-  | singleton      | 默认值，单例的                                               |
-  | prototype      | 多例的                                                       |
+  | singleton      | 默认值，单例的，对象随着容器的创建而创建，随容器的销毁而销毁 |
+  | prototype      | 多例的，对象被使用时创建，长时间不使用对象时会被Java的垃圾回收器回收 |
   | request        | WEB 项目中，Spring 创建一个 Bean 的对象，将对象存入到 request 域中 |
   | session        | WEB 项目中，Spring 创建一个 Bean 的对象，将对象存入到 session 域中 |
   | global session | WEB 项目中，应用在 Portlet 环境，如果没有 Portlet 环境那么globalSession 相当于 session |
@@ -683,7 +684,7 @@ spring 管理实例工厂，使用实例工厂的方法创建对象，工厂的�
 
 依赖注入：Dependency Injection。它是 spring 框架核心 ioc 的具体实现。
 
-我们的程序在编写时，通过控制反转，把对象的创建交给了 spring，但是代码中不可能出现没有依赖的情况。ioc 解耦只是降低他们的依赖关系，但不会消除。例如：我们的业务层仍会调用持久层的方法
+我们的程序在编写时，通过控制反转，把对象的创建交给了 spring，但是代码中不可能出现没有依赖的情况。**ioc 解耦只是降低他们的依赖关系，但不会消除**。例如：我们的业务层仍会调用持久层的方法
 
 那这种业务层和持久层的依赖关系，在使用 spring 之后，就让 spring 来维护了。
 
@@ -733,6 +734,14 @@ spring 管理实例工厂，使用实例工厂的方法创建对象，工厂的�
        userService.save(); // userService的save方法执行。。。
    }
    ```
+   
+5. 输出结果
+
+   ```
+   无参构造。。。
+   save running....
+   userService的save方法执行。。。
+   ```
 
 ### 4.5.2 依赖注入分析
 
@@ -754,7 +763,9 @@ spring 管理实例工厂，使用实例工厂的方法创建对象，工厂的�
 
 ### 4.5.4 依赖注入方式1--set方法
 
-顾名思义，就是在类中提供需要注入成员的 set 方法。具体代码如
+顾名思义，就是在类中提供需要注入成员的 set 方法。
+
+示例：在userServiceImpl实现类中注入userDao对象
 
 1. 接口类
 
@@ -805,7 +816,7 @@ spring 管理实例工厂，使用实例工厂的方法创建对象，工厂的�
    <bean id="UserDao" class="dao.impl.UserDaoImpl" ></bean>
    <bean id="userService" class="service.impl.userServiceImpl">
        <!--将UserDap对象注入到userService中，userService中需要配置set方法-->
-       <!--注意：这里的name标签内容是属性值，即set方法改变后的名字，ref是注入的对象（id标识）-->
+       <!--注意：这里的name标签内容是set方法的属性值，即set方法改变后的名字，ref是注入的对象（id标识）-->
        <property name="userDao" ref="UserDao"></property>
    </bean>
    ```
@@ -872,6 +883,7 @@ spring 管理实例工厂，使用实例工厂的方法创建对象，工厂的�
        public userServiceImpl(UserDao userDao) {
            this.userDao = userDao;
        }
+       
        @Override
        public void save() {
            System.out.println("userService的save方法执行。。。");
@@ -967,7 +979,7 @@ spring 管理实例工厂，使用实例工厂的方法创建对象，工厂的�
    }
    ```
 
-3. 配置application.xml，记得引入p命名空间
+3. 配置application.xml，**记得引入p命名空间**
 
    ```xml
    <beans xmlns="http://www.springframework.org/schema/beans"
@@ -980,7 +992,7 @@ spring 管理实例工厂，使用实例工厂的方法创建对象，工厂的�
        <!--p命名空间注入-->
        <bean id="UserDao" class="itcast.dao.impl.UserDaoImpl" ></bean>
        
-       <!--userDao-ref中的userDao是userService中set方法的属性名-->
+       <!--属性userDao-ref指的是UserDao的set方法，它的值是对应bean的id-->
        <bean id="userService" class="itcast.service.impl.userServiceImpl" p:userDao-ref="UserDao"></bean>
    
    </beans>
@@ -1021,11 +1033,11 @@ spring 管理实例工厂，使用实例工厂的方法创建对象，工厂的�
    ```java
    public class UserDaoImpl implements UserDao {
        private String username;
-       
-        public void setUsername(String username) {
+   
+       public void setUsername(String username) {
            this.username = username;
        }
-       
+   
        @Override
        public void save() {
            System.out.println("username---"+username);
@@ -1319,7 +1331,7 @@ spring 管理实例工厂，使用实例工厂的方法创建对象，工厂的�
 
 实际开发中，Spring的配置内容非常多，这就导致Spring配置很繁杂且体积很大，所以，可以将部分配置拆解到其他配置文件中，而在Spring主配置文件通过import标签进行加载
 
-1. 创建配置文件test.xml，并添加如下内容
+1. 创建spring配置文件test.xml，并添加如下内容
 
    ```xml
    <bean id="UserDao" class="dao.impl.UserDaoImpl" ></bean>
@@ -1363,7 +1375,6 @@ spring 管理实例工厂，使用实例工厂的方法创建对象，工厂的�
         <array> 标签
         <map> 标签
         <properties> 标签
-        <properties> 标签
     <constructor-arg> 标签
 <import> 标签：导入其他的Spring的分文件
 ```
@@ -1382,7 +1393,7 @@ applicationContext：接口类型，代表应用上下文，可以通过其实�
 
 1. ClassPathXmlApplicationContext
 
-   说明：它是从类的更路劲下加载配置文件（推荐使用）
+   说明：它是从类的跟路劲下加载配置文件（推荐使用）
 
 2. FileSystemXmlApplicationContext
 
@@ -1393,6 +1404,8 @@ applicationContext：接口类型，代表应用上下文，可以通过其实�
    说明：当使用注解配置容器对象时，需要使用此类来创建Spring容器对象。它用来读取注解配置
 
 ## 5.3 getBean() 方法使用
+
+getBean 源码
 
 ```java
 // 当参数的数据类型是字符串时，表示根据Bean的id从容器中获得Bean实例，返回的是Object，需要强转。
@@ -1413,6 +1426,7 @@ public <T> T getBean(Class<T> requiredType) throws BeansException {
 @Test
 public void test7(){
     // 报错，路径不对
+    // 说明：它是从磁盘路径上加载配置文件，配置文件可以在磁盘的任意位置，路径必须是全路径
     // ApplicationContext app = new FileSystemXmlApplicationContext("application.xml");
 
     ApplicationContext app = new ClassPathXmlApplicationContext("application.xml");
@@ -1528,8 +1542,8 @@ public void test7(){
 
      ```java
      /**
-      * 读取配置文件访问数据源
-      */
+          * 读取配置文件访问数据源
+          */
      @Test
      public void test3() throws PropertyVetoException, SQLException {
          // 读取配置文件
@@ -1557,7 +1571,7 @@ public void test7(){
 
    可以将DataSource的创建权交由Spring容器去完成
 
-   - DataSource有无参构造方法，而Spring默认就是通过无参构造方法实例化对象的
+   - DataSource有无参构造方法，而**Spring默认就是通过无参构造方法实例化对象**的
 
    - DataSource要想使用需要通过set方法设置数据库连接信息，而Spring可以通过set方法进行字符串注入
 
@@ -1705,12 +1719,14 @@ Spring原始注解主要是替代`<Bean>`的配置
   - @Autowire
 
     作用：
-    自动按照类型注入。当使用注解注入属性时，set 方法可以省略。它只能注入其他 bean 类型。当有多个类型匹配时，使用要注入的对象变量名称作为 bean 的 id，在 spring 容器查找，找到了也可以注入功。找不到就报错
+
+    自动**按照类型注入**。当使用注解注入属性时，set 方法可以省略。它只能注入其他 bean 类型。**当有多个类型匹配时，使用要注入的对象变量名称作为 bean 的 id，在 spring 容器查找**，找到了也可以注入成功。找不到就报错`NoUniqueBeanDefinitionException`（没有唯一的Bean定义异常）
 
   - @Qualifier
 
     作用：
-    在自动按照类型注入的基础之上，再按照 Bean 的 id 注入。它在给字段注入时不能独立使用，必须和@Autowire 一起使用；但是给方法参数注入时，可以独立使用。
+
+    **在自动按照类型注入的基础之上，再按照 Bean 的 id 注入**。它在给字段注入时不能独立使用，必须和@Autowire 一起使用；但是给方法参数注入时，可以独立使用。
     属性：value：指定 bean 的 id。
 
   - @Resource
@@ -1867,7 +1883,7 @@ Spring原始注解主要是替代`<Bean>`的配置
 
 ## 7.2 新注解
 
-使用上面5.3的注解还不能全部替代xml配置文件，还需要使用注解替代的配置如下：
+使用上面的注解还不能全部替代xml配置文件，还需要使用注解替代的配置如下：
 
 - 非自定义的Bean的配置：`<bean>`
 - 加载properties文件的配置：`<context:property-placeholder>`
@@ -1884,14 +1900,17 @@ Spring原始注解主要是替代`<Bean>`的配置
 
 新注解说明：
 
--  @Configuration
+- @Configuration
 
-  作用：用于指定当前类是一个 spring 配置类，当创建容器时会从该类上加载注解。获取容器时需要使用`AnnotationApplicationContext(有@Configuration 注解的类.class)`。
+  作用：
+
+  用于指定当前类是一个 spring 配置类，当创建容器时会从该类上加载注解。获取容器时需要使用`AnnotationApplicationContext(有@Configuration 注解的类.class)`。
   属性：`value`：用于指定配置类的字节码
 
 - @ComponentScan
 
   作用：
+
   用于指定 spring 在初始化容器时要扫描的包。作用和在 spring 的 xml 配置文件中的：`<context:component-scan base-package="com.itheima"/>`是一样的。
   属性：basePackages：用于指定要扫描的包。和该注解中的 value 属性作用一样。
 
@@ -1902,7 +1921,7 @@ Spring原始注解主要是替代`<Bean>`的配置
 
 - @PropertySource
 
-  作用：用于加载.properties 文件中的配置。例如我们配置数据源时，可以把连接数据库的信息写到properties 配置文件中，就可以使用此注解指定 properties 配置文件的位置。
+  作用：用于加载`.properties `文件中的配置。例如我们配置数据源时，可以把连接数据库的信息写到properties 配置文件中，就可以使用此注解指定 properties 配置文件的位置。
   属性：`value[]`：用于指定 properties 文件位置。如果是在类路径下，需要写上` classpath:`
 
 - @Import
@@ -2011,7 +2030,7 @@ IAccountService as = ac.getBean("accountService",IAccountService.class);
 **解决思路分析：**
 
 - 针对上述问题，我们需要的是程序能自动帮我们创建容器。一旦程序能自动为我们创建 spring 容器，我们就无须手动创建了，问题也就解决了。
-- 我们都知道，junit 单元测试的原理（在 web 阶段课程中讲过），但显然，junit 是无法实现的，因为它自己都无法知晓我们是否使用了 spring 框架，更不用说帮我们创建 spring 容器了。不过好在，junit 给我们暴露了一个注解，可以让我们替换掉它的运行器。
+- 我们都知道，junit 单元测试的原理，但显然，junit 是无法实现的，因为它自己都无法知晓我们是否使用了 spring 框架，更不用说帮我们创建 spring 容器了。不过好在，junit 给我们暴露了一个注解，可以让我们替换掉它的运行器。
 - 这时，我们需要依靠 spring 框架，因为它提供了一个运行器，可以读取配置文件（或注解）来创建容器。我们只需要告诉它配置文件在哪就行了
 
 **为什么不把测试类配到 xml 中：**
@@ -2084,13 +2103,13 @@ IAccountService as = ac.getBean("accountService",IAccountService.class);
        public void test1() throws SQLException {
            userService.save();
        }
-       /**
-        * 初始化方法。。。
-        * com.mysql.cj.jdbc.Driver
-        * userServiceImpl ....
-        * userDaoImpl ....
-        * 销毁方法。。。。
-        */
+       
+       @Test
+       public void test2() throws SQLException {
+           Connection connection = dataSource.getConnection();
+           System.out.println(connection);
+           connection.close();
+       }
        
    
    }
@@ -2105,13 +2124,13 @@ IAccountService as = ac.getBean("accountService",IAccountService.class);
 
 ## 8.1 什么是AOP
 
-AOP 为 Aspect Oriented Programming 的缩写，意思为面向切面编程，是通过预编译方式和运行期动态代理实现程序功能的统一维护的一种技术。
+AOP 为 Aspect Oriented Programming 的缩写，意思为**面向切面编程**，是通过预编译方式和运行期动态代理实现程序功能的统一维护的一种技术。
 
-AOP 是 OOP 的延续，是软件开发中的一个热点，也是Spring框架中的一个重要内容，是函数式编程的一种衍生范型。**利用AOP可以对业务逻辑的各个部分进行隔离，从而使得业务逻辑各部分之间的耦合度降低，提高程序的可重用性，同时提高了开发的效率。**
+AOP 是 **OOP（面向对象）** 的延续，是软件开发中的一个热点，也是Spring框架中的一个重要内容，是函数式编程的一种衍生范型。**利用AOP可以对业务逻辑的各个部分进行隔离，从而使得业务逻辑各部分之间的耦合度降低，提高程序的可重用性，同时提高了开发的效率。**
 
-作用：在程序运行期间，在不修改源码的情况下对方法进行功能增强
+**作用：**在程序运行期间，在不修改源码的情况下对方法进行功能增强
 
-优势：减少重复代码，提高开发效率，并且便于维护
+**优势：**减少重复代码，提高开发效率，并且便于维护
 
 ## 8.2 动态代理
 
@@ -2478,8 +2497,8 @@ AOP相关术语
          <!--        声明切面-->
          <aop:aspect ref="advice">
              <!--切面：切点+通知  含义：当访问save方法时，需要进行前置增强，增强的逻辑代码中在advice下的before中封装着-->
-             <aop:before method="before" pointcut="execution(public void itcast.aop.target.save())"></aop:before>
-             <!--前置增强通知-->
+            <!-- <aop:before method="before" pointcut="execution(public void itcast.aop.target.save())"></aop:before> -->
+             <!--前置增强通知 使用表达式-->
              <aop:before method="before" pointcut="execution(* itcast.aop.*.*(..))"></aop:before>
              <!--后置增强通知-->
              <aop:after-returning method="afterReturning" pointcut="execution(* itcast.aop.*.*(..))"></aop:after-returning>
@@ -2671,6 +2690,7 @@ AOP相关术语
 
     	<!--抽取切入点表达式-->
         <aop:pointcut id="myAdvice" expression="execution(* itcast.aop.*.*(..))"/>
+        
         <!--引入切入点表达式-->
         <aop:after method="fly" pointcut-ref="myAdvice"></aop:after>
         <aop:around method="around" pointcut-ref="myAdvice"></aop:around>
@@ -3115,14 +3135,11 @@ public JdbcTemplate(DataSource dataSource, boolean lazyInit) {
       <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
       	<property name="dataSource" ref="dataSource"></property>
       </bean>
-      ```
      ~~~
      
-     
-
    - 测试
    
-     ```java
+  ```java
      @RunWith(SpringJUnit4ClassRunner.class)
      @ContextConfiguration("classpath:application.xml")
      public class JdbcTemplateTest {
@@ -3443,7 +3460,7 @@ Spring 的声明式事务顾名思义就是**采用声明的方式来处理事�
        </tx:attributes>
    </tx:advice>
    
-     <!-- 织入配置-->
+    <!-- 织入配置-->
    <aop:config >
        <!-- spring专门为事务的增强提了一个配置，aop:advisor也是切面，但是这是一个通知的切面-->
        <aop:advisor advice-ref="myAdvice" pointcut="execution(* itcast.service.impl.*.*(..))"></aop:advisor>

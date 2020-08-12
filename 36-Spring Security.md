@@ -1,7 +1,5 @@
 # 36-Spring Security
 
-
-
 # 1. 权限控制
 
 ## 1.1 认证和授权概念
@@ -43,7 +41,7 @@
 
 # 2. Spring Security简介
 
-Spring Security是 Spring提供的安全认证服务的框架。 使用Spring Security可以帮助我们来简化认证和授权的过程。官网：https://spring.io/projects/spring-security
+Spring Security是 Spring提供的安全认证服务的框架。 使用Spring Security可以帮助我们来简化认证和授权的过程。官网：https://spring.io/projects/spring-securit。
 
 概念：Spring Security，这是一种基于 Spring AOP 和 Servlet 过滤器的安全框架。它提供全面的安全性解决方案，同时在 Web 请求级和方法调用级处理身份确认和授权。
 
@@ -142,7 +140,7 @@ Spring Security是 Spring提供的安全认证服务的框架。 使用Spring Se
        <security:http auto-config="true" use-expressions="true">
            <!--
    			intercept-url：定义一个拦截规则
-               pattern：对哪些url进行权限控制， /** 表示拦截所有请求
+               pattern：对哪些url进行权限控制， /** 表示拦截所有请求，也可以理解为检查所有请求是否具有此角色
                access：在请求对应的URL时需要什么权限，默认配置时它应该是一个以逗号分隔的角色列表，请求的用户只需拥有其中的一个角色就能成功访问对应的URL，hasRole：检查你是否具有某个角色
                -->
            <security:intercept-url pattern="/**" access="hasRole('ROLE_ADMIN')"></security:intercept-url>
@@ -234,9 +232,21 @@ Spring Security是 Spring提供的安全认证服务的框架。 使用Spring Se
    	指定哪些资源不需要进行权限校验，可以使用通配符
    -->
    <security:http security="none" pattern="/pages/a.html"></security:http>
+   
+   
    <!--    此目录下所有资源可匿名访问-->
    <security:http security="none" pattern="/pages/**"></security:http>
    ```
+
+注：需要使用在`<security:http auto-config="true" use-expressions="true">`标签之前，不然会报错
+
+```
+encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'org.springframework.security.filterChainProxy': Invocation of init method failed; nested exception is java.lang.IllegalArgumentException: A universal match pattern ('/**') is defined  before other patterns in the filter chain, causing them to be ignored. Please check the ordering in your <security:http> namespace or FilterChainProxy bean configuration
+
+在上下文初始化期间遇到-取消刷新尝试：org.springframework.beans.factory.BeanCreationException：创建名称为“ org.springframework.security.filterChainProxy”的bean时出错：调用init方法失败； 嵌套异常是java.lang.IllegalArgumentException：在过滤器链中的其他模式之前定义了通用匹配模式（'/ **'），从而导致它们被忽略。 请检查您的<security：http>名称空间或FilterChainProxy bean配置中的顺序
+```
+
+
 
 ## 4.2 使用指定的登录页面
 
@@ -256,8 +266,9 @@ Spring Security是 Spring提供的安全认证服务的框架。 使用Spring Se
    注意：此时需要将我们的自定义登录页面放行，不然也会被过滤掉
 
    ```xml
-   
+   <!--    放行自定义登录页面-->
    <security:http security="none" pattern="/login.html"></security:http>
+   
    <!--
        auto-config 自动配置，如果为true，表示自动应用一些默认配置，比如框架会默认提供一个登录页面
        use-expressions：是否使用spring提供的表达式来描述权限

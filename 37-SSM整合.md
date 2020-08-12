@@ -272,10 +272,8 @@ SSM工作的整体流程：
 
    - 保存数据页面，save.jsp
 
-     
-
      ```jsp
-     <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
      <html>
      <head>
          <title>Title</title>
@@ -291,11 +289,11 @@ SSM工作的整体流程：
      </body>
      </html>
      ```
-
+     
    - 展示数据页面，accountList.jsp
 
      ```html
-     <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+  <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
      <%@ page contentType="text/html;charset=UTF-8" isELIgnored="false" language="java" %>
      <html>
      <body>
@@ -317,7 +315,7 @@ SSM工作的整体流程：
      </html>
      
      ```
-
+   
 4. 创建数据库以及数据表
 
    ```sql
@@ -564,7 +562,7 @@ SSM工作的整体流程：
       </beans>
       ```
 
-    - sqlMapperConfig.xml映射文件
+    - mybatis核心配置文件sqlMapperConfig.xml
 
       ```xml
       <?xml version="1.0" encoding="UTF-8" ?>
@@ -601,30 +599,26 @@ SSM工作的整体流程：
       
           <!--加载映射文件-->
           <mappers>
-              <!--是位于resources目录下的映射文件，而不是接口文件-->
-      <!--        <mapper resource="com/itcast/dao/AccountDao.xml"></mapper>-->
-      
-      <!--        同样是resources目录下的映射文件，而不是接口文件，不同之处在于package标签可以一次性加载此目录下所有映射文件-->
               <package name="com.itcast.dao"/>
           </mappers>
       </configuration>
       ```
-
+      
     - jdbc.properties
-
+    
       ```properties
-      jdbc.driver=com.mysql.cj.jdbc.Driver
+  jdbc.driver=com.mysql.cj.jdbc.Driver
       jdbc.url=jdbc:mysql://localhost:3306/sys?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-      jdbc.username=root
+  jdbc.username=root
       jdbc.password=password
       ```
-
+    
     - log4j.properties
-
+    
       ```properties
-      # Set root category priority to INFO and its only appender to CONSOLE.
+  # Set root category priority to INFO and its only appender to CONSOLE.
       #log4j.rootCategory=INFO, CONSOLE            debug   info   warn error fatal
-      log4j.rootCategory=debug, CONSOLE, LOGFILE
+  log4j.rootCategory=debug, CONSOLE, LOGFILE
       
       # Set the enterprise logger category to FATAL and its only appender to CONSOLE.
       log4j.logger.org.apache.axis.enterprise=FATAL, CONSOLE
@@ -641,7 +635,7 @@ SSM工作的整体流程：
       log4j.appender.LOGFILE.layout=org.apache.log4j.PatternLayout
       log4j.appender.LOGFILE.layout.ConversionPattern=%d{ISO8601} %-6r [%15.15t] %-5p %30.30c %x - %m\n
       ```
-
+    
 11. 在resources目录下创建如下目录，并在其内创建sql映射文件
 
     `com/itcast/dao`，注意，**此目录保持和项目dao接口目录相同**
@@ -742,7 +736,35 @@ SSM工作的整体流程：
 
 修改上述案例，进行整合
 
-1. 修改sqlMapperConfig配置文件，只保留如下内容，其他交给spring创建
+1. 整合的核心坐标
+
+   ```xml
+   <dependency>
+       <groupId>org.mybatis</groupId>
+       <artifactId>mybatis-spring</artifactId>
+       <version>1.3.1</version>
+   </dependency>
+   <dependency>
+       <groupId>org.springframework</groupId>
+       <artifactId>spring-tx</artifactId>
+       <version>5.0.5.RELEASE</version>
+   </dependency>
+   <dependency>
+       <groupId>org.springframework</groupId>
+       <artifactId>spring-jdbc</artifactId>
+       <version>5.0.5.RELEASE</version>
+   </dependency>
+   <!-- druid数据库连接池 -->
+   <dependency>
+       <groupId>com.alibaba</groupId>
+       <artifactId>druid</artifactId>
+       <version>1.0.9</version>
+   </dependency>
+   ```
+
+   
+
+2. 修改sqlMapperConfig配置文件，只保留如下内容，其他交给spring创建
 
    ```xml
    <?xml version="1.0" encoding="UTF-8" ?>
@@ -761,7 +783,7 @@ SSM工作的整体流程：
    </configuration>
    ```
 
-2. 修改spring核心配置文件spring-application.xml文件
+3. 修改spring核心配置文件spring-application.xml文件
 
    主要添加的部分为：
 
@@ -808,15 +830,26 @@ SSM工作的整体流程：
    
        <!--spring和mybatis整合的工厂bean-->
        <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+           <!-- 注入数据库连接池 -->
            <property name="dataSource" ref="dataSource" />
            <!--加载mybatis核心配置文件-->
            <property name="configLocation" value="classpath:sqlMapperConfig-spring.xml" />
+                   
+            <!-- 扫描pojo包 使用别名，这里也可以配置别名 -->
+           <!--<property name="typeAliasesPackage" value="com.itcast.pojo" /> -->
        </bean>
    
        <!--批量扫描接口生成代理对象-->
+       <!--配置扫描Dao接口包，动态实现Dao接口，注入到spring容器中 -->
        <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
-           <!--指定接口所在的包，注意，是resources下和dao接口目录相同的目录-->
+           <!--指定接口所在的包，注意，是resources目录及映射文件需要和dao接口目录及类名保持一致-->
+            <!--       
+               basePackage 属性是让你为映射器接口文件设置基本的包路径。
+               你可以使用分号或逗号 作为分隔符设置多于一个的包路径。
+               每个映射器将会在指定的包路径中递归地被搜索到
+            -->
            <property name="basePackage" value="com.itcast.dao" />
+   
        </bean>
    
        
@@ -845,7 +878,7 @@ SSM工作的整体流程：
    </beans>
    ```
 
-3. 修改service实现类
+4. 修改service实现类
 
    ```java
    @Service("accountService")
@@ -868,4 +901,4 @@ SSM工作的整体流程：
    
    ```
 
-4. 正常测试即可，只要能够正常插入数据，事务就算配置成功，这里的案例并不能体现出来事务的控制
+5. 正常测试即可，只要能够正常插入数据，事务就算配置成功，这里的案例并不能体现出来事务的控制
