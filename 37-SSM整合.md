@@ -293,7 +293,7 @@ SSM工作的整体流程：
    - 展示数据页面，accountList.jsp
 
      ```html
-  <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+    <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
      <%@ page contentType="text/html;charset=UTF-8" isELIgnored="false" language="java" %>
      <html>
      <body>
@@ -607,18 +607,21 @@ SSM工作的整体流程：
     - jdbc.properties
     
       ```properties
-  jdbc.driver=com.mysql.cj.jdbc.Driver
+    jdbc.driver=com.mysql.cj.jdbc.Driver
       jdbc.url=jdbc:mysql://localhost:3306/sys?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-  jdbc.username=root
+    jdbc.username=root
       jdbc.password=password
       ```
     
     - log4j.properties
     
       ```properties
-  # Set root category priority to INFO and its only appender to CONSOLE.
-      #log4j.rootCategory=INFO, CONSOLE            debug   info   warn error fatal
-  log4j.rootCategory=debug, CONSOLE, LOGFILE
+      Set root category priority to INFO and its only appender to CONSOLE.
+      
+      #log4j.rootCategory=INFO, CONSOLEdebug info warn error fatal
+      
+      log4j.rootCategory=debug, CONSOLE, LOGFILE
+      
       
       # Set the enterprise logger category to FATAL and its only appender to CONSOLE.
       log4j.logger.org.apache.axis.enterprise=FATAL, CONSOLE
@@ -634,6 +637,7 @@ SSM工作的整体流程：
       log4j.appender.LOGFILE.Append=true
       log4j.appender.LOGFILE.layout=org.apache.log4j.PatternLayout
       log4j.appender.LOGFILE.layout.ConversionPattern=%d{ISO8601} %-6r [%15.15t] %-5p %30.30c %x - %m\n
+      
       ```
     
 11. 在resources目录下创建如下目录，并在其内创建sql映射文件

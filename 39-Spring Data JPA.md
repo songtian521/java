@@ -160,7 +160,7 @@ JPA和Hibernate的关系就像JDBC和JDBC驱动的关系，JPA是规范，Hibern
         */
    
        /**
-        * strategy 配置主键的生成策略
+        * @GeneratedValue(strategy = GenerationType.AUTO) 配置主键的生成策略
         *  GenerationType.IDENTITY表示自增（数据库必须支持自动增长方式 mysql）
         *  GenerationType.SEQUENCE表示序列，（数据库必须支持序列 oracle）
         *  GenerationType.TABLE：jpa提供的一种机制，通过数据库表的形式帮助我们完成主键自增(相当于有专门的一张表存储下一次增长的id)
@@ -168,7 +168,7 @@ JPA和Hibernate的关系就像JDBC和JDBC驱动的关系，JPA是规范，Hibern
         *
         */
        @Id//声明当前私有属性为主键
-       @GeneratedValue(strategy= GenerationType.AUTO)
+       @GeneratedValue(strategy= GenerationType.IDENTITY)
        @Column(name="cust_id") //指定和表中cust_id字段的映射关系，name值为字段名
        private Long custId;
    
@@ -190,66 +190,12 @@ JPA和Hibernate的关系就像JDBC和JDBC驱动的关系，JPA是规范，Hibern
        @Column(name="cust_phone")//指定和表中cust_phone字段的映射关系
        private String custPhone;
    
-       public Long getCustId() {
-           return custId;
-       }
-       public void setCustId(Long custId) {
-           this.custId = custId;
-       }
-       public String getCustName() {
-           return custName;
-       }
-       public void setCustName(String custName) {
-           this.custName = custName;
-       }
-       public String getCustSource() {
-           return custSource;
-       }
-       public void setCustSource(String custSource) {
-           this.custSource = custSource;
-       }
-       public String getCustIndustry() {
-           return custIndustry;
-       }
-       public void setCustIndustry(String custIndustry) {
-           this.custIndustry = custIndustry;
-       }
-       public String getCustLevel() {
-           return custLevel;
-       }
-       public void setCustLevel(String custLevel) {
-           this.custLevel = custLevel;
-       }
-       public String getCustAddress() {
-           return custAddress;
-       }
-       public void setCustAddress(String custAddress) {
-           this.custAddress = custAddress;
-       }
-       public String getCustPhone() {
-           return custPhone;
-       }
-       public void setCustPhone(String custPhone) {
-           this.custPhone = custPhone;
-       }
-   
-       @Override
-       public String toString() {
-           return "Customer{" +
-                   "custId=" + custId +
-                   ", custName='" + custName + '\'' +
-                   ", custSource='" + custSource + '\'' +
-                   ", custIndustry='" + custIndustry + '\'' +
-                   ", custLevel='" + custLevel + '\'' +
-                   ", custAddress='" + custAddress + '\'' +
-                   ", custPhone='" + custPhone + '\'' +
-                   '}';
-       }
+   	// 省略get set toString方法
    }
    ```
-
+   
    常用注解说明：
-
+   
    ```
    @Entity
        作用：指定当前类是实体类。
@@ -274,7 +220,7 @@ JPA和Hibernate的关系就像JDBC和JDBC驱动的关系，JPA是规范，Hibern
            columnDefinition: 定义建表时创建此列的DDL  
            secondaryTable: 从表名。如果此列不建在主表上（默认建在主表），该属性定义该列所在从表的名字搭建开发环境[重点]
    ```
-
+   
 4. 配置JPA核心配置文件
 
    在maven工程的resources路径下创建一个名为META-INF的文件夹，在此文件夹下创建一个名为persistence.xml的配置文件
@@ -312,13 +258,16 @@ JPA和Hibernate的关系就像JDBC和JDBC驱动的关系，JPA是规范，Hibern
    
                <!--配置jpa实现方（hibernate）的配置信息
                        显示sql：false/true
-                       自动创建数据库表：hibernate.hbm2ddl.auto
-                           create：程序运行时创建数据库表（如果有表，先删除在创建）
-                           update：程序运行时创建数据库表（如果有表，不会创建表）
-                           none：不会创建表
+                      
                -->
                <property name="hibernate.show_sql" value="true" />
                <property name="hibernate.format_sql" value="true" />
+               <!--
+   				 自动创建数据库表：hibernate.hbm2ddl.auto
+                           create：程序运行时创建数据库表（如果有表，先删除在创建）
+                           update：程序运行时创建数据库表（如果有表，不会创建表）
+                           none：不会创建表
+   			-->
                <property name="hibernate.hbm2ddl.auto" value="update" />
            </properties>
        </persistence-unit>
@@ -385,7 +334,7 @@ JPA和Hibernate的关系就像JDBC和JDBC驱动的关系，JPA是规范，Hibern
 
 # 4.JPA中主键声明策略
 
-通过annotation（注解）来映射hibernate实体的,基于annotation的hibernate主键标识为`@Id`, 其生成规则由`@GeneratedValue`设定的.这里的`@id`和`@GeneratedValue`都是JPA的标准用法。
+通过annotation（注解）来映射hibernate实体的,基于annotation的hibernate主键标识为`@Id`, 其生成规则由`@GeneratedValue`设定的。这里的`@id`和`@GeneratedValue`都是JPA的标准用法。
 
 JPA提供的四种标准用法为TABLE,SEQUENCE,IDENTITY,AUTO。
 
@@ -405,7 +354,7 @@ JPA提供的四种标准用法为TABLE,SEQUENCE,IDENTITY,AUTO。
   private Long custId;
   ```
 
-- AUTO：主键由程序控制
+- AUTO：主键由程序控制（自动选择某一种策略生成主键）
 
   ```java
   @Id  
@@ -427,7 +376,7 @@ JPA提供的四种标准用法为TABLE,SEQUENCE,IDENTITY,AUTO。
 
 1. Persistence对象
 
-   Persistence对象主要作用是用于获取EntityManagerFactory对象的 。通过调用该类的createEntityManagerFactory静态方法，根据配置文件中持久化单元名称创建EntityManagerFactory。
+   Persistence对象主要作用是用于获取EntityManagerFactory对象的 。通过调用该类的createEntityManagerFactory静态方法，并根据配置文件中持久化单元名称创建EntityManagerFactory。
 
    ```java
    //        1. 加载配置文件创建工厂（实体管理类工厂）对象
@@ -751,11 +700,11 @@ public void testGetReference(){
 }
 ```
 
-## 5.4 JPA的复杂查询
+## 5.4 JPA的复杂查询JPQL
 
 JPQL全称Java Persistence Query Language
 
-基于首次在EJB2.0中引入的EJB查询语言(EJB QL),Java持久化查询语言(JPQL)是一种可移植的查询语言，旨在以面向对象表达式语言的表达式，将SQL语法和简单查询语义绑定在一起·使用这种语言编写的查询是可移植的，可以被编译成所有主流数据库服务器上的SQL。
+基于首次在EJB2.0中引入的EJB查询语言(EJB QL)，Java持久化查询语言(JPQL)是一种可移植的查询语言，旨在以面向对象表达式语言的表达式，将SQL语法和简单查询语义绑定在一起，使用这种语言编写的查询是可移植的，可以被编译成所有主流数据库服务器上的SQL。
 
 **其特征与原生SQL语句类似，并且完全面向对象，通过类名和属性访问，而不是表名和表的属性。**
 
@@ -939,7 +888,7 @@ Spring Data JPA 让我们解脱了DAO层的操作，基本上所有CRUD都可以
 - 支持基于XML的实体映射
 - 通过引入基于JavaConfig的存储库配置`@EnableJpaRepositories`。
 
-SpringData Jpa 极大简化了数据库访问层代码。 如何简化的呢？ 使用了SpringDataJpa，我们的dao层中只需要写接口，就自动具有了增删改查、分页查询等方法。
+SpringData Jpa 极大简化了数据库访问层代码。 如何简化的呢？ **使用了SpringDataJpa，我们的dao层中只需要写接口，就自动具有了增删改查、分页查询等方法。**
 
 **Spring Data JPA 与 JPA和hibernate之间的关系：**
 
@@ -1166,6 +1115,18 @@ Spring Data JPA是Spring提供的一套对JPA操作更加高级的封装，是�
            <property name="jpaDialect">
                <bean class="org.springframework.orm.jpa.vendor.HibernateJpaDialect" />
            </property>
+   
+           <!--        注入jpa配置信息
+               加载jpa的基本配置信息和jpa实现方式（hibernate）的配置信息
+               hibernate.hbm2ddl.auto：自动创建数据库表
+                   create：每次都会重新创建数据库表
+                   update：有表则不会重新创建，无表则会重新创建
+   -->
+           <property name="jpaProperties">
+               <props>
+                   <prop key="hibernate.hbm2ddl.auto">update</prop>
+               </props>
+           </property>
        </bean>
    
        <!--    2. 整合spring data jpa-->
@@ -1241,64 +1202,10 @@ Spring Data JPA是Spring提供的一套对JPA操作更加高级的封装，是�
        @Column(name="cust_phone")//指定和表中cust_phone字段的映射关系
        private String custPhone;
    
-       public Long getCustId() {
-           return custId;
-       }
-       public void setCustId(Long custId) {
-           this.custId = custId;
-       }
-       public String getCustName() {
-           return custName;
-       }
-       public void setCustName(String custName) {
-           this.custName = custName;
-       }
-       public String getCustSource() {
-           return custSource;
-       }
-       public void setCustSource(String custSource) {
-           this.custSource = custSource;
-       }
-       public String getCustIndustry() {
-           return custIndustry;
-       }
-       public void setCustIndustry(String custIndustry) {
-           this.custIndustry = custIndustry;
-       }
-       public String getCustLevel() {
-           return custLevel;
-       }
-       public void setCustLevel(String custLevel) {
-           this.custLevel = custLevel;
-       }
-       public String getCustAddress() {
-           return custAddress;
-       }
-       public void setCustAddress(String custAddress) {
-           this.custAddress = custAddress;
-       }
-       public String getCustPhone() {
-           return custPhone;
-       }
-       public void setCustPhone(String custPhone) {
-           this.custPhone = custPhone;
-       }
-   
-       @Override
-       public String toString() {
-           return "Customer{" +
-               "custId=" + custId +
-               ", custName='" + custName + '\'' +
-               ", custSource='" + custSource + '\'' +
-               ", custIndustry='" + custIndustry + '\'' +
-               ", custLevel='" + custLevel + '\'' +
-               ", custAddress='" + custAddress + '\'' +
-               ", custPhone='" + custPhone + '\'' +
-               '}';
-       }
+    	// 省略get set toString方法
    }
    ```
-
+   
 4. 编写dao接口
 
    Spring Data JPA是spring提供的一款对于数据访问层（Dao层）的框架，使用Spring Data JPA，只需要按照框架的规范提供dao接口，不需要实现类就可以完成数据库的增删改查、分页查询等方法的定义，极大的简化了我们的开发过程。
@@ -1309,23 +1216,8 @@ Spring Data JPA是Spring提供的一套对JPA操作更加高级的封装，是�
    2. 提供相应的泛型
 
    ```java
-   package com.itcast.dao;
-   
-   import com.itcast.pojo.Customer;
-   import org.springframework.data.jpa.repository.*;
-   import org.springframework.transaction.annotation.Transactional;
-   
-   import java.util.List;
-   
    /**
-    * @Class:spring_data_jpa.com.itcast.dao.CustomerDao
-    * @Descript:
-    * @Author:宋天
-    * @Date:2020/8/16
-    */
-   
-   /**
-    * 符合SpringDataJpa的dao接口规范：
+    * 符合SpringDataJpa的dao接口规范：需要继承两个接口
     *      JpaRepository<操作的实体类类型，实体类中主键属性的类型>
     *          * 封装了基本的CRUD（增删改查）操作
     *      JpaSpecificationExecutor<操作的实体类类型>
@@ -1335,27 +1227,10 @@ Spring Data JPA是Spring提供的一套对JPA操作更加高级的封装，是�
    
    }
    ```
-
+   
 5. 测试CRUD操作
 
    ```java
-   import com.itcast.dao.CustomerDao;
-   import com.itcast.pojo.Customer;
-   import org.junit.Test;
-   import org.junit.runner.RunWith;
-   import org.springframework.beans.factory.annotation.Autowired;
-   import org.springframework.test.context.ContextConfiguration;
-   import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-   import org.springframework.transaction.annotation.Transactional;
-   
-   import java.util.List;
-   
-   /**
-    * @Class:spring_data_jpa.PACKAGE_NAME.CustomerDaoTest
-    * @Descript:
-    * @Author:宋天
-    * @Date:2020/8/16
-    */
    @RunWith(SpringJUnit4ClassRunner.class)
    @ContextConfiguration(locations = "classpath:applicationContextConfig.xml")
    public class CustomerDaoTest {
@@ -1374,7 +1249,7 @@ Spring Data JPA是Spring提供的一套对JPA操作更加高级的封装，是�
             * save : 保存或者更新
             *      根据传递的对象是否存在主键id
             *          * 如果没有主键ID，则保存
-            *          * 如果存在主键ID属性，则根据ID查询数据
+            *          * 如果存在主键ID属性，则根据ID值更新数据
             *
             *      返回被保存或者更新的数据
             */
@@ -1426,12 +1301,11 @@ Spring Data JPA是Spring提供的一套对JPA操作更加高级的封装，是�
             */
            Customer customer = customerDao.getOne(2L);
            System.out.println(customer);
-           System.out.println(1);
        }
    }
    
    ```
-
+   
    
 
 ## 6.2 入门案例深入解析
@@ -1573,6 +1447,18 @@ public interface PagingAndSortingRepository<T, ID extends Serializable> extends 
              <!--配置jpa方言：一些高级特性-->
              <property name="jpaDialect">
                  <bean class="org.springframework.orm.jpa.vendor.HibernateJpaDialect" />
+             </property>
+             
+             <!--        注入jpa配置信息
+                 加载jpa的基本配置信息和jpa实现方式（hibernate）的配置信息
+                 hibernate.hbm2ddl.auto：自动创建数据库表
+                     create：每次都会重新创建数据库表
+                     update：有表则不会重新创建，无表则会重新创建
+     -->
+             <property name="jpaProperties">
+                 <props>
+                     <prop key="hibernate.hbm2ddl.auto">update</prop>
+                 </props>
              </property>
          </bean>
      
@@ -1799,26 +1685,11 @@ public interface PagingAndSortingRepository<T, ID extends Serializable> extends 
 
 ## 7.2 JPQL方式查询
 
-使用Spring Data JPA提供的查询方法已经可以解决大部分的应用场景，但是对于某些业务来说，我们还需要灵活的构造查询条件，这时就可以使用@Query注解，结合JPQL的语句方式完成查询
+使用Spring Data JPA提供的查询方法已经可以解决大部分的应用场景，但是对于某些业务来说，我们还需要灵活的构造查询条件，这时就可以使用`@Query`注解，结合JPQL的语句方式完成查询
 
 `@Query `注解的使用非常简单，只需在方法上面标注该注解，同时提供一个JPQL查询语句即可
 
 ```java
-package com.itcast.dao;
-
-import com.itcast.pojo.Customer;
-import org.springframework.data.jpa.repository.*;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-
-/**
- * @Class:spring_data_jpa.com.itcast.dao.CustomerDao
- * @Descript:
- * @Author:宋天
- * @Date:2020/8/16
- */
-
 /**
  * 符合SpringDataJpa的dao接口规范：
  *      JpaRepository<操作的实体类类型，实体类中主键属性的类型>
@@ -1874,7 +1745,7 @@ public class CustomerDaoJPATest {
 
     @Test
     @Transactional // 进行update/delete操作时必须配置事务
-    @Rollback(false) // 设置是否自动回滚
+    @Rollback(false) // 设置是否自动回滚，默认自动回滚
     public void updateCustomerTest(){
         /**
          * springDataJpa中使用jpql完成 update/delete操作
@@ -2093,6 +1964,8 @@ public interface Specification<T> {
 
 ## 8.2 使用Specifications完成条件查询
 
+接口类
+
 ```java
 /**
  * 符合SpringDataJpa的dao接口规范：
@@ -2128,8 +2001,8 @@ public class specTest {
          *      2. 实现toPredicate方法（构造查询条件）
          *      3. 借助方法参数中的两个参数
          *          * root：获取需要查询的对象属性
-         *          * CriteriaBuilder：构造查询条件的，内部|封装了很多的查询条件（模糊匹配，精准匹配）
-         *          query：代表一个顶层查询对象，用来自定义查询（了解）
+         *          * CriteriaBuilder：构造查询条件的，内部封装了很多的查询条件（模糊匹配，精准匹配）
+         *          * CriteriaQuery：代表一个顶层查询对象，用来自定义查询（了解）
          */
         Specification<Customer> spec = new Specification<Customer>() {
             @Override
