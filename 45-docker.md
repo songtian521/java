@@ -66,6 +66,8 @@
 
 # 3. 安装docker
 
+## 3.1 windows 安装
+
 现在 Docker 有专门的 Win10 专业版系统的安装包，需要开启 Hyper-V。
 
 windows版docker文但那给官方网站：https://docs.docker.com/engine/
@@ -105,16 +107,90 @@ windows版docker文但那给官方网站：https://docs.docker.com/engine/
 
    其他的镜像加速参考：https://www.runoob.com/docker/docker-mirror-acceleration.html
 
+## 3.2 centos7安装
+
+1. root权限更新Yum包
+
+   ```
+   yum update
+   ```
+
+2. 卸载旧版本：（如果安装过旧版本的话）
+
+   > 旧版名称是docker , 最新社区版 docker-engine， 目前已改名为docker-ce 
+
+   ```
+    yum -y remove docker docker-common docker-selinux docker-engine
+   ```
+
+3. 设置Yum源：
+
+   > 安装 yum-utils , 使用 yum-config-manager 工具设置Yum源, 后面两个是 devicemapper驱动依赖
+
+   ```
+   yum install -y yum-utils device-mapper-persistent-data lvm2
+   ```
+
+4. 执行以下命令，添加docker的yum源
+
+   ```
+   yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+   ```
+
+5. 安装docker 
+
+   ```
+   yum install docker-ce (这样写默认安装最新版本)
+   ```
+
+6. 启动并加入开机启动
+
+   ```
+   $ systemctl start docker       (重启命令  $  systemctl restart docker ) 
+   $ systemctl enable docker   开机启动
+   $ docker version  查看docker版本号
+   ```
+
+7. 验证是否安装成功
+
+   ```
+   $ docker run hello-world
+   ```
+
+8. 安装docker-compose
+
+   > 版本号可以更换为自己需要的
+
+   最新发行的版本地址：https://github.com/docker/compose/releases。
+
+   ```
+   sudo curl -L https://get.daocloud.io/docker/compose/releases/download/1.27.4/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+   ```
+
+9. 添加可执行权限
+
+   ```
+   sudo chmod +x /usr/local/bin/docker-compose
+   ```
+
+10. 测试安装结果
+
+    ```
+    [root@centos7 /]# docker-compose --version
+    docker-compose version 1.27.4, build 40524192
+    ```
+
+    
+
 # 4. docker的数据卷
 
 1. **数据卷：**数据卷就是在宿主中可以在容器之间进行共享和重用的一系列和文件和文件夹，通过docker run -v命令可以将数据卷挂载到对应的容器目录空间，进行文件读取，容器卷特性如下
-
-   - 数据卷可以在容器之间共享和重用，容器间传递数据将变得高效方便
-
-   - 对数据卷内数据的修改会立马生效，无论是容器内操作还是本地操作
+- 数据卷可以在容器之间共享和重用，容器间传递数据将变得高效方便
+  
+- 对数据卷内数据的修改会立马生效，无论是容器内操作还是本地操作
    - 对数据卷的更新不会影响镜像，解耦了应用和数据
    - 卷会一直存在，直到没有容器使用，可以安全地卸载它
-
+   
 2. **数据卷容器：**接数据卷，已经存在一个挂载了数据卷的容器；由于数据卷在容器之前是可以共享的，所以此时如果存在其他容器通过`docker run --volumes-from [容器别名]`命令挂载到该容器上，则该容器可以被称之为数据卷容器，其主要功能是提供数据卷供其他容器挂载。**当数据卷容器宕机后，并不会造成数据卷的回收卸载，数据卷会继续挂载在其他容器中**。当全部挂载该数据卷的容器全部宕机后，该数据卷才会卸载
 
 ## 4.1 数据卷问题引入
@@ -624,12 +700,14 @@ Run 'docker volume COMMAND --help' for more information on a command.
 13. 此时基本配置完成，可以使用客户端工具连接oracle了
 
     - 连接名`docker_oracle_11g `（任意）
-    - 连接类型（Basic）
+    - 连接类型（Basic）注：datagrip连接时貌似不需要指定这个
     - 主机：localhost
     - 端口：1521（之前做映射的端口）
     - 服务名：使用SID作为服务名：`helowin`
     - 用户名：system
     - 密码：123456
+    - 使用超级管理员用户登录 ：sys as sysdba
+    - 密码：sys
 
 **开始配置持久化存储**
 
@@ -1112,7 +1190,90 @@ Run 'docker volume COMMAND --help' for more information on a command.
    PONG
    ```
    
+
+## 6.8 部署rocketMQ
+
+具体操作方法百度
+
+1. 拉取镜像
+
+   ```shell
+   docker pull rocketmqinc/rocketmq
+   # 控制台
+   docker pull pangliang/rocketmq-console-ng
+   ```
+
+2. 创建三个文件夹用于持久化数据
+
+3. 创建配置文件broker.conf
+
+   ```
+   brokerClusterName = DefaultCluster
+   brokerName = broker-a
+   brokerId = 0
+   deleteWhen = 04
+   fileReservedTime = 48
+   brokerRole = ASYNC_MASTER
+   flushDiskType = ASYNC_FLUSH
+   # 指定ip，这里是你的本地IP地址，注意：不是127.0.0.1
+   brokerIP1 = 172.25.64.1
+   ```
+
+4. 安装nameserver
+
+   ```shell
+   docker run -d -p 9876:9876 -v /opt/rocketmq/logs:/root/logs -v /opt/rocketmq/store:/root/store --name rmqnamesrv -e "MAX_POSSIBLE_HEAP=100000000" rocketmqinc/rocketmq sh mqnamesrv
+   ```
+
+5. 安装broker
+
+   ```shell
+   docker run -id -p 10911:10911 -p 10909:10909 -v /opt/rocketmq/logs:/root/logs -v /opt/rocketmq/store:/root/store -v /opt/rocketmq/conf/broker.conf:/opt/rocketmq-4.4.0/conf/broker.conf  --name rmqbroker  --link rmqnamesrv:namesrv  -e "NAMESRV_ADDR=namesrv:9876" -e "MAX_POSSIBLE_HEAP=200000000" rocketmqinc/rocketmq sh mqbroker -c /opt/rocketmq-4.4.0/conf/broker.conf
+   ```
+
+6. 安装控制台
+
+   ```shell
+   docker run -id --name rmqconsole -p 8080:8080  --link rmqnamesrv:namesrv -e "JAVA_OPTS=-Drocketmq.namesrv.addr=namesrv:9876 -Dcom.rocketmq.sendMessageWithVIPChannel=false" -t pangliang/rocketmq-console-ng
+   ```
+
+7. 访问地址：
+
+   http://localhost:8081
    
+8. 启动容器
+
+   ```
+   docker start rmqnamesrv
+   docker start rmqbroker
+   docker start rmqconsole
+   ```
+
+9. 关闭容器
+
+   ```
+   docker stop rmqnamesrv
+   docker stop rmqbroker
+   docker stop rmqconsole
+   
+   docker rm rmqnamesrv
+   docker rm rmqbroker
+   docker rm rmqconsole
+   ```
+
+10. 测试自带消息
+
+    ```
+    // 首先进入docker的rocketmq服务器，执行以下命令，不然会报错No name server address, please set it
+    export NAMESRV_ADDR=localhost:9876
+    
+    // 发送消息测试
+    sh tools.sh org.apache.rocketmq.example.quickstart.Producer
+    // 消费消息测试
+    sh tools.sh org.apache.rocketmq.example.quickstart.Consumer
+    ```
+
+    
 
 # 7. docker 镜像原理
 

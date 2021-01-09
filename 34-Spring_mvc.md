@@ -140,9 +140,11 @@ RESTful 编程风格的请求
 
 ## 2.1 servlet知识回顾
 
-1. 创建项目spring_mvc
+1. 创建项目spring_mvc，选择骨架maven-archetype-webapp
 
-2. 导入坐标
+2. 自行在main目录下创建java和resources文件夹，骨架没有自动创建
+
+3. 导入坐标
 
    ```xml
    <dependency>
@@ -169,7 +171,7 @@ RESTful 编程风格的请求
    </dependency>
    ```
 
-3. 创建包dao
+4. 创建包dao
 
    - 在包dao下创建接口类
 
@@ -190,7 +192,7 @@ RESTful 编程风格的请求
      }
      ```
 
-4. 创建包service
+5. 创建包service
 
    - 在包service下创建接口类
 
@@ -216,7 +218,7 @@ RESTful 编程风格的请求
      }
      ```
 
-5. 创建包web，并创建userServlet类
+6. 创建包web，并创建userServlet类
 
    ```java
    public class userServlet extends HttpServlet {
@@ -230,7 +232,7 @@ RESTful 编程风格的请求
    }
    ```
 
-6. 创建application.xml配置文件
+7. 创建application.xml配置文件
 
    ```xml
    <bean id="userDao"  class="dao.impl.UserDaoImpl"></bean>
@@ -239,9 +241,9 @@ RESTful 编程风格的请求
    </bean>
    ```
 
-7. 右键此项目，选择Add Framework Support，选择Web Application，然后点击ok
+8. 右键此项目，选择Add Framework Support，选择Web Application，然后点击ok
 
-8. 此时，已生成web目录，配置其中的web.xml文件
+9. 此时，已生成web目录，配置其中的web.xml文件
 
    ```xml
    <!-- 配置 servlet 的核心控制器 -->
@@ -255,7 +257,9 @@ RESTful 编程风格的请求
    </servlet-mapping>
    ```
 
-9. 运行访问
+10. 运行访问
+
+   可能需要自行配置tomcat运行
 
    此时，会在右上角的运行位置出现tomcat相关组件，直接运行即可，也可以根据需要自行配置相关内容
 
@@ -626,15 +630,24 @@ springMVC执行流程
 
 ![](img/spring/spring执行流程.png)
 
-1. 首先用户发送请求http://localhost:80/save至web容器，web容器根据`/save`路径映射到DispatcherServlet（url-pattern为/）进行处理；
 
-2. DispatcherServlet收到请求并调用HandlerMapping完成请求到处理的映射，将`/save`路径直接映射到名字为`/save`的Bean进行处理
 
-3. 处理器映射器找到具体的处理器(可以根据xml配置、注解进行查找)，生成处理器对象及处理器拦截器(如果有则生成)一并返回给DispatcherServlet。
+> 前置说明：
+>
+> 1. tomcat启动的时候，会加载web.xml
+> 2. 实例并初始化servlet
+> 3. 加载springmvc.xml配置文件创建spring容器，根据配置初始化容器中的对象
 
-4. DispatcherServlet调用HandlerAdapter处理器适配器。
+1. 用户发送请求http://localhost:80/save至**DispatcherServlet（前端控制器）。**
 
-   HandlerAdapter经过适配调用具体的处理器(Controller，也叫后端控制器)。
+2. DispatcherServlet收到请求并调用**HandlerMapping（处理器映射器）**完成请求到处理的映射。
+
+3. 处理器映射器根据url找到具体的处理器，生成**处理器执行链HandlerExecutionChain**(包括处理器对象和处理器拦截器)一并返回给DispatcherServlet
+
+4. DispatcherServlet根据**处理器Handler**获取处理器适配器HandlerAdapter，执行HandlerAdapter处理一系列的操作
+
+   > HandlerAdapter经过适配调用具体的处理器(Controller，也叫后端控制器)。
+   >
 
    在填充Handler的入参过程中，根据你的配置，Spring将帮你做一些额外的工作：
 
@@ -643,13 +656,13 @@ springMVC执行流程
    - 数据格式化：对请求消息进行数据格式化。 如将字符串转换成格式化数字或格式化日期等
    - 数据验证： 验证数据的有效性（长度、格式等），验证结果存储到BindingResult或Error中
 
-5. Controller执行完成返回ModelAndView。
+5. **执行处理器Handler**(Controller，也叫页面控制器)，Handler执行完成**返回ModelAndView**
 
 6. HandlerAdapter将controller执行结果ModelAndView返回给DispatcherServlet。
 
-7. DispatcherServlet将ModelAndView传给ViewReslover视图解析器。
+7. DispatcherServlet将ModelAndView传给**ViewReslover视图解析器**。
 
-8. ViewReslover解析后返回具体View，DispatcherServlet根据View进行渲染视图（即将模型数据填充至视图中）
+8. ViewReslover解析后**返回具体View**，DispatcherServlet根据View进行渲染视图（即将模型数据填充至视图中）
 
 9. DispatcherServlet响应用户消息。
 

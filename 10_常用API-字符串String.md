@@ -1,5 +1,3 @@
-# 10_字符串类String
-
 ## 1. 字符串类String
 
 ### 1.String概述

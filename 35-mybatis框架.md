@@ -1,20 +1,229 @@
 # 35-mybatis框架
 
-# 1. 框架概述
+# 1. ORM思想概述
 
-框架（Framework）是整个或部分系统的可重用设计，表现为一组抽象构件及构件实例间交互的方法；另一种定义认为，框架是可被应用开发者定制的应用骨架。前者是从应用方面而后者是从目的方面给出的定义。
+对象关系映射（Object Relational Mapping，简称ORM，或O/RM，或O/R mapping），是一种程序技术，用于实现面向对象编程语言里不同类型系统的数据之间的转换。从效果上说，它其实是创建了一个可在编程语言里使用的“虚拟对象数据库”。
 
-简而言之，框架其实就是某种应用的半成品，就是一组组件，供你选用完成你自己的系统。简单说就是使用别人搭好的舞台，你来做表演。而且，框架一般是成熟的，不断升级的软件。
+广义上，ORM指的是面向对象的对象模型和关系型数据库的数据结构之间的相互转换。 狭义上，ORM可以被认为是，基于关系型数据库的数据存储，实现一个虚拟的面向对象的数据访问接口。
 
-框架的重要性在于它实现了部分功能，并且能够很好的将低层应用平台和高层业务逻辑进行了缓和。为了实现软件工程中的“**高内聚、低耦合**”。把问题划分开来各个解决，易于控制，易于延展，易于分配资源。我们常见的MVC 软件设计思想就是很好的分层思想
+**ORM的定义：**
 
-**MyBatis 框架概述**
+- O(对象模型)：
+
+  实体对象，即我们在程序中根据数据库表结构建立的一个个实体Entity。
+
+- R(关系型数据库的数据结构)：
+
+  即我们建立的数据库表。
+
+- M(映射)：
+
+  从R（数据库）到O（对象模型）的映射，可通过XML文件映射。
+
+简单的说，ORM 是通过使用描述对象和数据库之间映射的元数据，将 Java 程序中的对象自动持久化到关系型数据库中。
+
+![](img/mybatis/orm思想.jpg)
+
+有了映射关系之后，就不用担心对象属性名和表字段列名不匹配的问题了。
+
+![](img/mybatis/映射关系.jpg)
+
+ORM 框架：遵循 ORM 思想实现的技术，解决的是持久层的问题（和数据库做 CRUD）。
+
+即，把对象数据库的操作封装成一套 API，具有操作数据库的增删改查等功能，而且具有独立性。
+
+一个设计良好的持久层，应该保证：当持久层的实现技术发生改变的时候，不会影响到上一层的代码（业务层 service）。
+
+## 1.2 MyBatis 框架概述 
+
+MyBatis框架也应用了ORM思想，一般我们把它称之为**半自动的ORM框架**，跟Hibernate相比，MyBatis更加轻量，更加灵活，为了保证这一点，程序员在使用MyBatis时需要自己编写sql语句，但是API的使用依然像Hibernate一样简单方便
 
 mybatis 是一个优秀的基于 java 的持久层框架，它内部封装了 jdbc，使开发者只需要关注 sql 语句本身，而不需要花费精力去处理加载驱动、创建连接、创建 statement 等繁杂的过程。
 
 mybatis 通过 xml 或注解的方式将要执行的各种 statement 配置起来，并通过 java 对象和 statement 中sql 的动态参数进行映射生成最终执行的 sql 语句，最后由 mybatis 框架执行 sql 并将结果映射为 java 对象并返回。
 
 采用 ORM 思想解决了实体和数据库映射的问题，对 jdbc 进行了封装，屏蔽了 jdbc api 底层访问细节，使我们不用与 jdbc api 打交道，就可以完成对数据库的持久化操作。
+
+## 1.3 Hibernate 概述
+
+Hibernate就是应用ORM思想建立的一个框架，一般我们把它称之为**全自动的ORM框架**，程序员在使用Hibernate时几乎不用编写sql语句，而是通过操作对象即可完成对数据库的增删改查。
+
+**Hibernate 优点:**
+
+- Hibernate会处理映射的Java类来使用XML文件，数据库表和无需编写任何一行代码。
+- 提供了简单的API，用于直接从数据库中存储和检索Java对象。
+- 如果有变化，数据库或任何表中的那么只需要修改XML文件的属性。
+- 抽象掉不熟悉的SQL类型，并提供我们解决熟悉的Java对象。
+- Hibernate不要求应用服务器进行操作。
+- 操纵数据库对象的复杂关联。
+- 尽量减少与智能读取策略数据库的访问。
+- 提供数据的简单查询。
+
+**Hibernate 案例入门**
+
+1. 导入坐标
+
+   ```xml
+   <dependency>
+       <groupId>org.hibernate</groupId>
+       <artifactId>hibernate-core</artifactId>
+       <version>5.4.21.Final</version>
+   </dependency>
+   <dependency>
+       <groupId>mysql</groupId>
+       <artifactId>mysql-connector-java</artifactId>
+       <version>8.0.21</version>
+   </dependency>
+   <dependency>
+       <groupId>org.projectlombok</groupId>
+       <artifactId>lombok</artifactId>
+       <version>1.18.12</version>
+   </dependency>
+   ```
+
+2. 编写Hibernate核心配置文件hibernate.cfg.xml（文件名不要改变，默认文件名）
+
+   > 该配置文件主要设置了数据库连接信息和映射配置文件的位置信息
+
+   ```xml
+   <?xml version='1.0' encoding='utf-8'?>
+   <!DOCTYPE hibernate-configuration PUBLIC
+           "-//Hibernate/Hibernate Configuration DTD//EN"
+           "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+   
+   <hibernate-configuration>
+       <session-factory>
+           <!--        数据库连接-->
+           <property name="connection.url">jdbc:mysql://localhost:3307/test?useSSL=false&amp;serverTimezone=UTC&amp;allowPublicKeyRetrieval=true</property>
+           <property name="connection.driver_class">com.mysql.cj.jdbc.Driver</property>
+           <property name="connection.username">root</property>
+           <property name="connection.password">123456</property>
+   
+           <!--        选项配置-->
+           <!--        根据实体类更新或者生成表-->
+           <property name="hibernate.hbm2ddl.auto">update</property>
+           <!--        方言 告诉hibernate根据什么数据库语法生成sql-->
+           <property name="dialect">org.hibernate.dialect.MySQLDialect</property>
+           <!--        调试，把执行的sql输出到控制台-->
+           <property name="show_sql">true</property>
+   
+           <!--带有映射注解的实体类-->
+           <mapping class="com.it.orm.hibernate.entity.Book"/>
+   
+   
+           <!--映射配置文件-->
+           <!--        <mapping resource="mapper/Book.hbm.xml"/>-->
+       </session-factory>
+   </hibernate-configuration>
+   ```
+
+3. 编写实体类
+
+   ```java
+   @Entity
+   @Getter
+   @Setter
+   @ToString
+   @Table(name = "book")
+   public class Book {
+       @Id
+       @GeneratedValue(strategy = GenerationType.IDENTITY) //数据库自增
+       @Column(name = "id")
+       private int id;
+       @Column(name = "name")
+       private String name;
+       @Column(name = "author")
+       private String author;
+       @Column(name = "price")
+       private double price;
+   }
+   
+   ```
+
+4. 配置映射文件
+
+   ```xml
+   <hibernate-mapping>
+       <class name="com.it.orm.hibernate.entity.Book" table="book">
+           <id name="id">
+               <column name="id"/>
+               <generator class="identity"/> <!--主键的值采用自增方式-->
+           </id>
+           <property name="name">
+               <column name="name"/>
+           </property>
+           <property name="author">
+               <column name="author"/>
+           </property>
+           <property name="price">
+               <column name="price"/>
+           </property>
+       </class>
+   </hibernate-mapping>
+   ```
+
+5. 测试
+
+   ```java
+   public class BookTest {
+       private Session session = null;
+       @Before
+       public void before(){
+           //  初始化hibernate对象，解析hibernate的核心配置文件
+           Configuration configure = new Configuration().configure();
+           // 创建SessionFactory，解析映射信息并生成基本的SQL
+           SessionFactory factory = configure.buildSessionFactory();
+           // 得到session对象，此对象具有增删改查的方法
+           session = factory.openSession();
+       }
+   
+       @Test
+       public void testSave(){
+           // 开启事务
+           Transaction transaction = session.beginTransaction();
+   
+           // 保存数据
+           Book book = new Book();
+           book.setName("java从入门到入土");
+           book.setAuthor("小白");
+           book.setPrice(100);
+   
+           session.save(book);
+   
+           // 提交事务
+           transaction.commit();
+       }
+   
+       @Test
+       public void testGet(){
+           Book book = session.get(Book.class, 2);
+           System.out.println(book);
+       }
+   
+       @Test
+       public void testDelete(){
+           // 开启事务
+           Transaction transaction = session.beginTransaction();
+   
+           // 根据id删除数据
+           Book book = new Book();
+           book.setId(3);
+           session.delete(book);
+   
+           //提交事务
+           transaction.commit();
+       }
+   
+       @After
+       public void after(){
+           // 关闭会话，释放资源
+           session.close();
+       }
+   }
+   
+   ```
+
+   
 
 # 2. jdbc编程的分析
 
@@ -920,7 +1129,7 @@ Mapper 接口开发方法**只需要程序员编写Mapper 接口（相当于Dao 
            <!--是位于resources目录下的映射文件，而不是接口文件-->
            <!--<mapper resource="itcast/mapper/UserMapper.xml"></mapper>-->
    
-           <!--同样是resources目录下的映射文件，而不是接口文件，不同之处在于package标签可以一次性加载此目录下所有映射文件-->
+           <!--同样是resources目录下的映射文件，而不是接口文件，不同之处在于package标签可以一次性加载此目录下所有映射文件，package扫描的是包而不能是某个具体的文件-->
            <package name="itcast.mapper"/>
        </mappers>
    
@@ -4232,7 +4441,7 @@ MyBatis中通过Mapper接口加载映射文件需要满足以下规范：
 
    - 要么只使用注解方式，要么只使用mapper映射文件方式。
 - 在仅使用mapper映射文件的方式时，**必须要保持映射文件和对应接口包相同路径及名字，具体见上图**
-   
+  
 2. **如果接口中存在相同的方法名（即使方法签名不同）**，那么mybatis将抛出`Mapped Statements collection already contains value`错误消息。
 
 
